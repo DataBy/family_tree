@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Family Tree</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Ink+Free&display=swap');
+
+    .inkfree { font-family: 'Ink Free', cursive; }
+
+    /* Estilo base: para cuadros pequeños */
+    .glassy {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Estilo reforzado: para paneles grandes */
+    .glassy-strong {
+    background: rgba(255, 255, 255, 0.08); /* un poquito más claro */
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4),
+                inset 0 0 15px rgba(255, 255, 255, 0.05); /* un glow interno */
+    }
+
+    .hover-zoom:hover {
+      transform: scale(1.12);
+      transition: transform 0.2s ease;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0B3037, #134E5E);
+    }
+
+    .material-icons { color: white; }
+  </style>
+</head>
+<body class="flex justify-center items-center h-screen w-screen overflow-hidden">
+
+  <!-- Contenedor principal -->
+  <div class="w-[1920px] h-[1080px] flex">
+
+    <!-- Sidebar -->
+    <aside class="w-[300px] h-full flex flex-col justify-between py-9">
+
+      <!-- Superior -->
+      <div class="flex flex-col items-start ml-[72px]">
+        <!-- Logo -->
+        <img src="../assets/images/logo.png" alt="Logo" class="w-[250px] h-[195px] mb-[47px] object-contain">
+
+        <!-- Botones con separación de 33px borde a borde -->
+        <nav class="flex flex-col items-start">
+          <button class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+            <span class="material-icons text-[35px]">home</span> Inicio
+          </button>
+          <button class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+            <span class="material-icons text-[35px]">person</span> Personas
+          </button>
+          <button class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+            <span class="material-icons text-[35px]">account_tree</span> Árbol
+          </button>
+          <button class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+            <span class="material-icons text-[35px]">search</span> Buscar
+          </button>
+          <button class="w-[250px] h-[60px] bg-[#01C38E] text-white text-[30px] flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+            <span class="material-icons text-[35px]">history</span> Historial
+          </button>
+        </nav>
+      </div>
+
+    <!-- Cuadro de fecha (alineado y con spacing correcto) -->
+        <div class="glassy w-[250px] h-[281px] mt-[33px] mb-[53px] ml-[72px] flex flex-col items-start px-4 pt-6 pb-6 rounded-[15px] text-white">
+            <div class="flex items-center mb-[53px]">
+                <span class="material-icons text-[40px] text-[#7C95FF]">calendar_today</span>
+                <p class="text-[30px] ml-[30px]">17</p>
+            </div>
+            <div class="flex items-center mb-[53px]">
+                <span class="material-icons text-[40px] text-[#9CCC65]">schedule</span>
+                <p class="text-[30px] ml-[30px]">Agosto</p>
+            </div>
+            <div class="flex items-center">
+                <span class="material-icons text-[40px] text-[#FACF43]">wb_sunny</span>
+                <p class="text-[30px] ml-[30px]">2025</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="flex-1 flex flex-col p-6 pl-[72px]">
+
+      <!-- Barra superior -->
+      <div class="flex justify-end items-center mb-6 gap-4 w-[1500px] mx-auto">
+        <!-- Familia con dropdown -->
+        <div class="w-[529px] h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md mr-[50px]">
+          <div class="flex items-center gap-3">
+            <span class="material-icons text-[35px]">groups</span> Familia:
+          </div>
+          <span class="material-icons text-[30px]">expand_more</span>
+        </div>
+
+        <!-- Iconos configuración -->
+        <div class="w-[309px] h-[60px] flex items-center justify-around glassy rounded-[15px]">
+          <span class="material-icons text-[40px] hover-zoom">refresh</span>
+          <span class="material-icons text-[40px] hover-zoom">notifications</span>
+          <span class="material-icons text-[40px] hover-zoom">settings</span>
+          <span class="material-icons text-[40px] hover-zoom">logout</span>
+        </div>
+      </div>
+
+      <!-- Contenedor central -->
+      <div class="w-[1500px] h-[917px] glassy-strong rounded-[15px] flex flex-col justify-center items-center mx-auto shadow-lg">
+        
+        
+      </div>
+    </main>
+  </div>
+</body>
+</html>
