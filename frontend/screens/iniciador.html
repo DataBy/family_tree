@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Family Tree Launcher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Importar Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0B3037, #134E5E);
+    }
+    .neumorphic {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      box-shadow: 8px 8px 20px rgba(0,0,0,0.3),
+                  -8px -8px 20px rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+    }
+  </style>
+  <script>
+    function abrirApp() {
+      window.open(
+        "../screens/personas.html",   // RUTA DE TU ARCHIVO
+        "FamilyTreeApp",
+        "width=1920,height=1080,resizable=no,scrollbars=no"
+      );
+    }
+  </script>
+</head>
+<body class="flex items-center justify-center min-h-screen text-white">
+
+  <div class="neumorphic p-12 flex flex-col items-center text-center max-w-lg w-full">
+    <!-- Logo -->
+    <img src="../assets/images/logo.png" alt="Logo" class="w-[200px] mb-6">
+
+    <!-- Bienvenida -->
+    <h1 class="text-4xl font-bold mb-6">Bienvenido a <span class="text-[#01C38E]">Family Tree</span></h1>
+    <p class="text-lg mb-8 text-gray-200">
+      Gestiona y explora tu árbol genealógico de forma sencilla y visual.
+    </p>
+
+    <!-- Botón -->
+    <button onclick="abrirApp()"
+      class="w-full py-4 rounded-[15px] bg-[#01C38E] text-white text-2xl font-semibold hover:bg-[#037153] transition flex items-center justify-center gap-2 shadow-md">
+      <span class="material-icons">play_arrow</span>
+      Abrir aplicación
+    </button>
+  </div>
+
+</body>
+</html>
