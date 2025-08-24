@@ -37,9 +37,9 @@ def personas():
     return render_template("personas.html")
 
 
-@app.route("/config")
-def config():
-    return render_template("config.html")
+@app.route("/ver_matriz")
+def ver_matriz():
+    return {"matriz": db.matriz}
 
 if __name__ == "__main__":
     app.run(debug=True)
