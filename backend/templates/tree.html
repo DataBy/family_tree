@@ -54,7 +54,7 @@
         <!-- Logo -->
         <img src="../static/images/logo.png" alt="Logo" class="w-[250px] h-[195px] mb-[47px] object-contain">
 
-        <!-- Botones con separación de 33px borde a borde -->
+       <!-- Botones con separación de 33px borde a borde -->
         <nav class="flex flex-col items-start">
           <!-- Botón Inicio -->
             <a href="{{ url_for('home') }}"
@@ -115,88 +115,13 @@
 
       <!-- Barra superior -->
       <div class="flex justify-end items-center mb-6 gap-4 w-[1500px] mx-auto">
-
-
-
-        <!-- FAMILIA: botón + dropdown -->
-        <div x-data="{ open: false }" class="relative w-[529px] mr-[50px]">
-          <!-- Botón principal (muestra la familia activa) -->
-          <div @click="open = !open"
-              class="w-full h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md cursor-pointer">
-            <div class="flex items-center gap-3">
-              <span class="material-icons text-[35px]">groups</span>
-              <span>Familia: {{ familia_activa or ' ' }}</span>
-            </div>
-            <span class="material-icons text-[30px]">expand_more</span>
+        <!-- Familia con dropdown -->
+        <div class="w-[529px] h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md mr-[50px]">
+          <div class="flex items-center gap-3">
+            <span class="material-icons text-[35px]">groups</span> Familia:
           </div>
-
-          <!-- Dropdown -->
-          <div x-show="open" x-transition
-              @click.outside="open = false"
-              class="absolute mt-2 w-full bg-white rounded-[15px] shadow-lg p-4 z-50">
-
-            <!-- Crear familia -->
-            <form method="POST" action="{{ url_for('crear_familia') }}" class="flex gap-2">
-              <input type="text" name="nombre_familia" required
-                    placeholder="Nombre de la familia"
-                    class="flex-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#01C38E]" />
-              <button type="submit"
-                      class="px-4 py-2 bg-[#01C38E] text-white rounded-lg hover:bg-[#037153]">
-                Añadir
-              </button>
-            </form>
-
-            <!-- Lista/selector de familias -->
-            <div class="mt-4">
-              {% if familias %}
-                <ul class="space-y-2">
-                  {% for fam in familias %}
-                    <li class="flex items-center justify-between py-2 px-3 rounded-lg
-                              {% if fam == familia_activa %} bg-emerald-50 {% else %} bg-gray-50 {% endif %}">
-                      <div class="flex items-center gap-2">
-                        <span class="material-icons text-[22px]
-                                    {% if fam == familia_activa %} text-[#01C38E] {% else %} text-gray-500 {% endif %}">
-                          groups
-                        </span>
-                        <span class="text-gray-800 font-medium">{{ fam }}</span>
-                        {% if fam == familia_activa %}
-                          <span class="ml-2 text-xs text-[#01C38E] font-semibold">(Activa)</span>
-                        {% endif %}
-                      </div>
-
-                      <!-- Switch para activar -->
-                      <form method="POST" action="{{ url_for('seleccionar_familia') }}" class="m-0">
-                        <input type="hidden" name="nombre_familia" value="{{ fam }}">
-                        <label class="relative inline-block w-12 h-6 align-middle">
-                          <input type="checkbox" class="sr-only peer"
-                                onchange="this.form.submit()"
-                                {% if fam == familia_activa %} checked {% endif %}>
-                          <span class="absolute inset-0 bg-gray-300 rounded-full transition
-                                      peer-checked:bg-[#01C38E]"></span>
-                          <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform
-                                      peer-checked:translate-x-6"></span>
-                        </label>
-                      </form>
-                    </li>
-                  {% endfor %}
-                </ul>
-              {% else %}
-                <p class="text-gray-500 text-sm px-1">Aún no hay familias.</p>
-              {% endif %}
-            </div>
-          </div>
+          <span class="material-icons text-[30px]">expand_more</span>
         </div>
-
-        <!-- AlpineJS (si no lo tenés ya en la página) -->
-        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
-
-
-
-
-
-
-
 
         <!-- Iconos configuración -->
         <div class="w-[309px] h-[60px] flex items-center justify-around glassy rounded-[15px]">
@@ -209,10 +134,8 @@
 
       <!-- Contenedor central -->
       <div class="w-[1500px] h-[917px] glassy-strong rounded-[15px] flex flex-col justify-center items-center mx-auto shadow-lg">
-        <p class="inkfree text-[40px] text-white text-center mt-[80px] mb-2 ml-[300px] mr-[300px]">
-          Bienvenido(a) a tu árbol genealógico. Aquí podrás registrar y descubrir tu historia familiar
-        </p>
-        <img src="../static/images/arbol.png" alt="Árbol" class="w-[720px] h-[720px]">
+        
+        
       </div>
     </main>
   </div>
