@@ -71,7 +71,46 @@ def ver_matriz():
 
 @app.route("/tree")
 def tree():
-    return render_template("tree.html", **ctx())
+    fam = session.get("familia_activa")
+    matriz = db.obtener_matriz(fam) if fam else None
+
+    def to_elements(matriz):
+        elements = []
+        if not matriz:
+            return elements
+
+        def get_id(r, c, i):
+            return f"{r}-{c}-{i}"
+
+        for r, fila in enumerate(matriz):
+            for c, col in enumerate(fila):
+                for i, persona in enumerate(col):
+                    pid = get_id(r, c, i)
+                    fallecido = bool(persona.get("fecha_defuncion"))
+                    elements.append({
+                        "data": {
+                            "id": pid,
+                            "label": f"{persona['nombre']} {persona['apellidos']}",
+                            "detalle": f"Cédula: {persona['cedula']}<br>"
+                                       f"Nac: {persona['fecha_nacimiento']}"
+                                       + (f"<br>Fallec: {persona['fecha_defuncion']}" if fallecido else ""),
+                            "fallecido": fallecido,
+                        }
+                    })
+                    # conectar con la misma columna en la fila anterior
+                    if r > 0 and c < len(matriz[r-1]):
+                        for j, padre in enumerate(matriz[r-1][c]):
+                            elements.append({
+                                "data": {
+                                    "id": f"e-{r}-{c}-{i}-{j}",
+                                    "source": get_id(r-1, c, j),
+                                    "target": pid
+                                }
+                            })
+        return elements
+
+    elements = to_elements(matriz)
+    return render_template("tree.html", elements=elements, **ctx())
 
 # ---- Familias: crear y seleccionar
 @app.route("/familia/nueva", methods=["POST"])

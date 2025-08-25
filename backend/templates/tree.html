@@ -115,13 +115,86 @@
 
       <!-- Barra superior -->
       <div class="flex justify-end items-center mb-6 gap-4 w-[1500px] mx-auto">
-        <!-- Familia con dropdown -->
-        <div class="w-[529px] h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md mr-[50px]">
-          <div class="flex items-center gap-3">
-            <span class="material-icons text-[35px]">groups</span> Familia:
+
+
+
+
+               <!-- FAMILIA: botón + dropdown -->
+        <div x-data="{ open: false }" class="relative w-[529px] mr-[50px]">
+          <!-- Botón principal (muestra la familia activa) -->
+          <div @click="open = !open"
+              class="w-full h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md cursor-pointer">
+            <div class="flex items-center gap-3">
+              <span class="material-icons text-[35px]">groups</span>
+              <span>Familia: {{ familia_activa or ' ' }}</span>
+            </div>
+            <span class="material-icons text-[30px]">expand_more</span>
           </div>
-          <span class="material-icons text-[30px]">expand_more</span>
+
+          <!-- Dropdown -->
+          <div x-show="open" x-transition
+              @click.outside="open = false"
+              class="absolute mt-2 w-full bg-white rounded-[15px] shadow-lg p-4 z-50">
+
+            <!-- Crear familia -->
+            <form method="POST" action="{{ url_for('crear_familia') }}" class="flex gap-2">
+              <input type="text" name="nombre_familia" required
+                    placeholder="Nombre de la familia"
+                    class="flex-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#01C38E]" />
+              <button type="submit"
+                      class="px-4 py-2 bg-[#01C38E] text-white rounded-lg hover:bg-[#037153]">
+                Añadir
+              </button>
+            </form>
+
+            <!-- Lista/selector de familias -->
+            <div class="mt-4">
+              {% if familias %}
+                <ul class="space-y-2">
+                  {% for fam in familias %}
+                    <li class="flex items-center justify-between py-2 px-3 rounded-lg
+                              {% if fam == familia_activa %} bg-emerald-50 {% else %} bg-gray-50 {% endif %}">
+                      <div class="flex items-center gap-2">
+                        <span class="material-icons text-[22px]
+                                    {% if fam == familia_activa %} text-[#01C38E] {% else %} text-gray-500 {% endif %}">
+                          groups
+                        </span>
+                        <span class="text-gray-800 font-medium">{{ fam }}</span>
+                        {% if fam == familia_activa %}
+                          <span class="ml-2 text-xs text-[#01C38E] font-semibold">(Activa)</span>
+                        {% endif %}
+                      </div>
+
+                      <!-- Switch para activar -->
+                      <form method="POST" action="{{ url_for('seleccionar_familia') }}" class="m-0">
+                        <input type="hidden" name="nombre_familia" value="{{ fam }}">
+                        <label class="relative inline-block w-12 h-6 align-middle">
+                          <input type="checkbox" class="sr-only peer"
+                                onchange="this.form.submit()"
+                                {% if fam == familia_activa %} checked {% endif %}>
+                          <span class="absolute inset-0 bg-gray-300 rounded-full transition
+                                      peer-checked:bg-[#01C38E]"></span>
+                          <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform
+                                      peer-checked:translate-x-6"></span>
+                        </label>
+                      </form>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="text-gray-500 text-sm px-1">Aún no hay familias.</p>
+              {% endif %}
+            </div>
+          </div>
         </div>
+
+        <!-- AlpineJS (si no lo tenés ya en la página) -->
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+
+
+
+
 
         <!-- Iconos configuración -->
         <div class="w-[309px] h-[60px] flex items-center justify-around glassy rounded-[15px]">
@@ -132,8 +205,92 @@
         </div>
       </div>
 
-      <!-- Contenedor central -->
-      <div class="w-[1500px] h-[917px] glassy-strong rounded-[15px] flex flex-col justify-center items-center mx-auto shadow-lg">
+
+
+
+
+
+     <!-- Contenedor central -->
+<div id="cy" class="w-[1500px] h-[917px] glassy-strong rounded-[15px] mx-auto shadow-lg"></div>
+
+<!-- Libs: orden importa -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qtip2/3.0.3/jquery.qtip.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qtip2/3.0.3/jquery.qtip.min.js"></script>
+<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/cytoscape-qtip/cytoscape-qtip.js"></script>
+
+<!-- Inyecta el JSON desde Flask (si no hay, queda []) -->
+<script id="graph-data" type="application/json">
+  {{ (elements | default([])) | tojson }}
+</script>
+
+<script>
+  // Lee y parsea los datos inyectados
+  const elements = JSON.parse(
+    document.getElementById('graph-data').textContent || '[]'
+  );
+
+  const cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#01C38E',
+          'background-image': 'url(/static/images/default-avatar.png)',
+          'background-fit': 'cover',
+          'border-width': 3,
+          'border-color': '#ffffff',
+          'label': 'data(label)',
+          'color': '#fff',
+          'font-size': 12,
+          'text-valign': 'bottom',
+          'text-halign': 'center',
+          'text-margin-y': 8,
+          'width': 80,
+          'height': 80,
+          'shape': 'ellipse',
+          'transition-property': 'width height border-color',
+          'transition-duration': '0.3s'
+        }
+      },
+      /* Soporta fallecido como boolean o string */
+      { selector: 'node[fallecido = 1], node[fallecido = "true"]',
+        style: { 'filter': 'grayscale(100%)', 'border-color': '#aaa' }
+      },
+      { selector: 'node:hover',
+        style: { 'width': 100, 'height': 100, 'border-color': '#ff0' }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 3,
+          'line-color': '#01C38E',
+          'curve-style': 'bezier',
+          'target-arrow-shape': 'triangle',
+          'target-arrow-color': '#01C38E'
+        }
+      }
+    ],
+    layout: { name: 'breadthfirst', directed: true, padding: 20, spacingFactor: 1.5 },
+    wheelSensitivity: 0.2
+  });
+
+  // Tooltips (requiere cytoscape-qtip + qtip2)
+  if (elements.length && cy.qtip) {
+    cy.ready(() => {
+      cy.nodes().forEach(n => {
+        n.qtip({
+          content: n.data('detalle') || 'Sin detalles',
+          position: { my: 'top center', at: 'bottom center' },
+          style: { classes: 'qtip-dark qtip-rounded', tip: { width: 12, height: 8 } }
+        });
+      });
+    });
+  }
+</script>
         
         
       </div>
