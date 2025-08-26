@@ -75,38 +75,136 @@ def tree():
     matriz = db.obtener_matriz(fam) if fam else None
 
     def to_elements(matriz):
-        elements = []
         if not matriz:
-            return elements
+            return []
 
-        def get_id(r, c, i):
-            return f"{r}-{c}-{i}"
+        # ====== Layout espacioso ======
+        CELL_W = 560
+        CELL_H = 300
+        PAD_X  = 180
+        PAD_Y  = 140
+        SLOT   = 180  # separación dentro de la celda (parejas)
 
-        for r, fila in enumerate(matriz):
-            for c, col in enumerate(fila):
-                for i, persona in enumerate(col):
-                    pid = get_id(r, c, i)
-                    fallecido = bool(persona.get("fecha_defuncion"))
+        def base_pos(r, c):
+            return (PAD_X + c * CELL_W, PAD_Y + r * CELL_H)
+
+        # --- clave única por persona ---
+        def person_key(p: dict) -> str:
+            ced = (p.get("cedula") or "").strip()
+            if ced:
+                return f"ced-{ced}"
+            # fallback razonable si no hay cédula
+            nom = (p.get("nombre") or "").strip()
+            ape = (p.get("apellidos") or "").strip()
+            nac = (p.get("fecha_nacimiento") or "").strip()
+            return f"nf-{nom}|{ape}|{nac}"
+
+        def photo_url(p: dict) -> str:
+            genero = (p.get("genero") or "").lower()
+            digits = "".join(ch for ch in (p.get("cedula") or "") if ch.isdigit())
+            seed = int(digits[-2:], 10) % 90 if digits else 0
+            if "fem" in genero:
+                return f"https://randomuser.me/api/portraits/women/{seed}.jpg"
+            if "mas" in genero:
+                return f"https://randomuser.me/api/portraits/men/{seed}.jpg"
+            return f"https://picsum.photos/seed/{seed}/200/200"
+
+        def is_couple_row(r: int) -> bool:
+            # En tu convención, parejas en filas 0 y 2
+            return r in (0, 2)
+
+        elements = []
+
+        # Mapas para deduplicar:
+        #   key_persona -> node_id (único en el grafo)
+        #   pos_id(r-c-i) -> node_id (para “resolver” al crear edges)
+        seen_person: dict[str, str] = {}
+        pos_to_node: dict[str, str]  = {}
+
+        # --- 1) Crear nodos de personas (SIN duplicar) ---
+        for r, fila in enumerate(matriz or []):
+            for c, celda in enumerate(fila):
+                n = len(celda)
+                for i, p in enumerate(celda):
+                    pos_id = f"{r}-{c}-{i}"
+                    k = person_key(p)
+
+                    if k in seen_person:
+                        # Ya existe: no dibujamos otro nodo, solo mapeamos posición->nodo existente
+                        pos_to_node[pos_id] = seen_person[k]
+                        continue
+
+                    # Crear nodo NUEVO
+                    node_id = f"p-{k}"
+                    seen_person[k] = node_id
+                    pos_to_node[pos_id] = node_id
+
+                    x0, y0 = base_pos(r, c)
+                    offset = (i - (n - 1) / 2) * SLOT
+                    fallecido = bool((p.get("fecha_defuncion") or "").strip())
+                    detalle = (
+                        f"<b>{p.get('nombre','')} {p.get('apellidos','')}</b><br>"
+                        f"Cédula: {p.get('cedula','—')}<br>"
+                        f"Nac: {p.get('fecha_nacimiento','—')}"
+                        + (f"<br>Fallec: {p['fecha_defuncion']}" if fallecido else "")
+                    )
+
                     elements.append({
                         "data": {
-                            "id": pid,
-                            "label": f"{persona['nombre']} {persona['apellidos']}",
-                            "detalle": f"Cédula: {persona['cedula']}<br>"
-                                       f"Nac: {persona['fecha_nacimiento']}"
-                                       + (f"<br>Fallec: {persona['fecha_defuncion']}" if fallecido else ""),
-                            "fallecido": fallecido,
-                        }
+                            "id": node_id,
+                            "kind": "person",
+                            "label": f"{p.get('nombre','')} {p.get('apellidos','')}",
+                            "detalle": detalle,
+                            "img": photo_url(p),
+                            "fallecido": 1 if fallecido else 0
+                        },
+                        "position": {"x": x0 + offset, "y": y0}
                     })
-                    # conectar con la misma columna en la fila anterior
-                    if r > 0 and c < len(matriz[r-1]):
-                        for j, padre in enumerate(matriz[r-1][c]):
+
+        # --- 2) Uniones matrimoniales centradas + edges ---
+        for r, fila in enumerate(matriz or []):
+            if not is_couple_row(r):
+                continue
+
+            for c, celda in enumerate(fila):
+                # parejas por pares consecutivos [0,1], [2,3], ...
+                pairs = [(k, k + 1) for k in range(0, len(celda) - 1, 2)]
+                for pair_idx, (iA, iB) in enumerate(pairs):
+                    # Resolver cada posición a su node_id real (deduplicado)
+                    idA = pos_to_node.get(f"{r}-{c}-{iA}")
+                    idB = pos_to_node.get(f"{r}-{c}-{iB}")
+                    if not idA or not idB:
+                        continue
+
+                    # Nodo "unión" centrado (punto del que cuelgan hijos)
+                    x0, y0 = base_pos(r, c)
+                    union_id = f"u-{r}-{c}-{pair_idx}"
+                    elements.append({
+                        "data": {"id": union_id, "kind": "union"},
+                        "position": {"x": x0, "y": y0 + 12}
+                    })
+
+                    # Matrimonio: dos segmentos hacia el centro (unión)
+                    elements.append({
+                        "data": {"id": f"mA-{r}-{c}-{pair_idx}",
+                                 "source": idA, "target": union_id, "etype": "marriage"}
+                    })
+                    elements.append({
+                        "data": {"id": f"mB-{r}-{c}-{pair_idx}",
+                                 "source": idB, "target": union_id, "etype": "marriage"}
+                    })
+
+                    # Hijos: fila r+1, misma columna c (cuelgan de la unión)
+                    if r + 1 < len(matriz) and c < len(matriz[r + 1]):
+                        for j in range(len(matriz[r + 1][c])):
+                            child_node = pos_to_node.get(f"{r+1}-{c}-{j}")
+                            if not child_node:
+                                continue
                             elements.append({
-                                "data": {
-                                    "id": f"e-{r}-{c}-{i}-{j}",
-                                    "source": get_id(r-1, c, j),
-                                    "target": pid
-                                }
+                                "data": {"id": f"h-{union_id}-{child_node}",
+                                         "source": union_id, "target": child_node, "etype": "child"}
                             })
+
         return elements
 
     elements = to_elements(matriz)
@@ -132,6 +230,8 @@ def seleccionar_familia():
     else:
         flash("⚠️ La familia no existe.")
     return redirect(request.referrer or url_for("personas"))
+
+
 
 # Limpiar reinicio del servidor
 @app.before_request

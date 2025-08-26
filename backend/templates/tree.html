@@ -210,78 +210,115 @@
 
 
 
-     <!-- Contenedor central -->
+    <!-- Contenedor central -->
 <div id="cy" class="w-[1500px] h-[917px] glassy-strong rounded-[15px] mx-auto shadow-lg"></div>
 
-<!-- Libs: orden importa -->
+<!-- Libs (orden importa) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qtip2/3.0.3/jquery.qtip.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qtip2/3.0.3/jquery.qtip.min.js"></script>
 <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 <script src="https://unpkg.com/cytoscape-qtip/cytoscape-qtip.js"></script>
 
-<!-- Inyecta el JSON desde Flask (si no hay, queda []) -->
+<!-- Inyecta el JSON desde Flask -->
 <script id="graph-data" type="application/json">
   {{ (elements | default([])) | tojson }}
 </script>
 
 <script>
-  // Lee y parsea los datos inyectados
-  const elements = JSON.parse(
-    document.getElementById('graph-data').textContent || '[]'
-  );
+  const elements = JSON.parse(document.getElementById('graph-data').textContent || '[]');
 
   const cy = cytoscape({
     container: document.getElementById('cy'),
     elements,
     style: [
+      /* Persona: tarjeta con foto (con fallback) */
       {
-        selector: 'node',
+        selector: 'node[kind = "person"]',
         style: {
-          'background-color': '#01C38E',
-          'background-image': 'url(/static/images/default-avatar.png)',
-          'background-fit': 'cover',
-          'border-width': 3,
-          'border-color': '#ffffff',
+          'shape': 'round-rectangle',
+          'width': 120,
+          'height': 140,
+
+          /* 1ª capa: foto remota; 2ª capa: fallback local */
+          'background-image': ['data(img)', '/static/images/default-avatar.png'],
+          'background-image-crossorigin': 'anonymous',
+          'background-fit': ['cover','cover'],
+          'background-opacity': 1,
+
+          'border-width': 4,
+          'border-color': '#FFE26E',
           'label': 'data(label)',
           'color': '#fff',
           'font-size': 12,
           'text-valign': 'bottom',
           'text-halign': 'center',
-          'text-margin-y': 8,
-          'width': 80,
-          'height': 80,
-          'shape': 'ellipse',
+          'text-margin-y': 6,
+          'text-wrap': 'wrap',
+          'text-max-width': 110,
+          'text-background-color': 'rgba(0,0,0,.45)',
+          'text-background-opacity': 1,
+          'text-background-shape': 'round-rectangle',
           'transition-property': 'width height border-color',
-          'transition-duration': '0.3s'
+          'transition-duration': '200ms'
         }
       },
-      /* Soporta fallecido como boolean o string */
-      { selector: 'node[fallecido = 1], node[fallecido = "true"]',
-        style: { 'filter': 'grayscale(100%)', 'border-color': '#aaa' }
-      },
-      { selector: 'node:hover',
-        style: { 'width': 100, 'height': 100, 'border-color': '#ff0' }
-      },
+      /* Fallecidos: B/N */
       {
-        selector: 'edge',
+        selector: 'node[kind="person"][fallecido = 1]',
+        style: { 'filter': 'grayscale(100%)', 'border-color': '#bfbfbf' }
+      },
+      /* Unión matrimonial: punto invisible/minúsculo */
+      {
+        selector: 'node[kind = "union"]',
         style: {
+          'width': 6,
+          'height': 6,
+          'background-opacity': 0,
+          'border-width': 0
+        }
+      },
+      /* Matrimonio: dos segmentos (A→union y B→union), rectos, apuntando al centro */
+      {
+        selector: 'edge[etype = "marriage"]',
+        style: {
+          'line-color': '#ffffff',
+          'width': 4,
+          'opacity': 0.95,
+          'curve-style': 'straight',
+          'target-arrow-shape': 'vee',
+          'target-arrow-color': '#ffffff',
+          'arrow-scale': 1.0
+        }
+      },
+      /* Hijos: desde la unión hacia abajo */
+      {
+        selector: 'edge[etype = "child"]',
+        style: {
+          'line-color': '#77e3c6',
           'width': 3,
-          'line-color': '#01C38E',
+          'opacity': 0.85,
           'curve-style': 'bezier',
           'target-arrow-shape': 'triangle',
-          'target-arrow-color': '#01C38E'
+          'target-arrow-color': '#77e3c6'
         }
+      },
+      /* Hover persona */
+      {
+        selector: 'node[kind="person"]:hover',
+        style: { 'width': 130, 'height': 150, 'border-color': '#fff59d' }
       }
     ],
-    layout: { name: 'breadthfirst', directed: true, padding: 20, spacingFactor: 1.5 },
-    wheelSensitivity: 0.2
+    layout: { name: 'preset' },  // usamos las posiciones calculadas en backend
+    wheelSensitivity: 0.2,
+    minZoom: 0.3,
+    maxZoom: 2.2
   });
 
-  // Tooltips (requiere cytoscape-qtip + qtip2)
+  // Tooltips con detalles
   if (elements.length && cy.qtip) {
     cy.ready(() => {
-      cy.nodes().forEach(n => {
+      cy.nodes('node[kind="person"]').forEach(n => {
         n.qtip({
           content: n.data('detalle') || 'Sin detalles',
           position: { my: 'top center', at: 'bottom center' },
@@ -291,6 +328,7 @@
     });
   }
 </script>
+
         
         
       </div>
