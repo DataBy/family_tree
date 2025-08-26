@@ -12,21 +12,21 @@
 
     /* Estilo base: para cuadros pequeños */
     .glassy {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     }
 
     /* Estilo reforzado: para paneles grandes */
     .glassy-strong {
-    background: rgba(255, 255, 255, 0.08); /* un poquito más claro */
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    border-radius: 20px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4),
-                inset 0 0 15px rgba(255, 255, 255, 0.05); /* un glow interno */
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4),
+                  inset 0 0 15px rgba(255, 255, 255, 0.05);
     }
 
     .hover-zoom:hover {
@@ -40,6 +40,16 @@
 
     .material-icons { color: white; }
   </style>
+
+  <!-- Hace que el mensaje de persona agregada desaparezca luego de 3 segundos -->
+  <script>
+    setTimeout(() => {
+      const msg = document.getElementById('toast-msg');
+      if (msg) {
+        msg.remove();
+      }
+    }, 3000);
+  </script>
 </head>
 <body class="flex justify-center items-center h-screen w-screen overflow-hidden">
 
@@ -48,81 +58,71 @@
 
     <!-- Sidebar -->
     <aside class="w-[300px] h-full flex flex-col justify-between py-9">
-
       <!-- Superior -->
       <div class="flex flex-col items-start ml-[72px]">
         <!-- Logo -->
         <img src="../static/images/logo.png" alt="Logo" class="w-[250px] h-[195px] mb-[47px] object-contain">
 
-        <!-- Botones con separación de 33px borde a borde -->
+        <!-- Botones -->
         <nav class="flex flex-col items-start">
-          <!-- Botón Inicio -->
-            <a href="{{ url_for('home') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+          <a href="{{ url_for('home') }}"
+             class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
+                    flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
             <span class="material-icons text-[35px]">home</span> Inicio
-            </a>
-          
-          <!-- Botón Personas (a) -->
-            <a href="{{ url_for('personas') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+          </a>
+
+          <a href="{{ url_for('personas') }}"
+             class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
+                    flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
             <span class="material-icons text-[35px]">person</span> Personas
-            </a>
+          </a>
 
-          <!-- Botón Arbol -->
-            <a href="{{ url_for('tree') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+          <a href="{{ url_for('tree') }}"
+             class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
+                    flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
             <span class="material-icons text-[35px]">account_tree</span> Árbol
-            </a>
+          </a>
 
-          <!-- Botón Buscar -->
-            <a href="{{ url_for('search') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+          <a href="{{ url_for('personas') }}"
+             class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
+                    flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
             <span class="material-icons text-[35px]">search</span> Buscar
-            </a>
+          </a>
 
-          <!-- Botón Historial -->
-            <a href="{{ url_for('personas') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
+          <a href="{{ url_for('personas') }}"
+             class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
+                    flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
             <span class="material-icons text-[35px]">history</span> Historial
-            </a>
+          </a>
         </nav>
       </div>
 
-    <!-- Cuadro de fecha (alineado y con spacing correcto) -->
-        <div class="glassy w-[250px] h-[281px] mt-[0px] mb-[53px] ml-[72px] flex flex-col items-start px-4 pt-6 pb-6 rounded-[15px] text-white">
-            <div class="flex items-center mb-[53px]">
-                <span class="material-icons text-[40px] text-[#7C95FF]">calendar_today</span>
-                <p class="text-[30px] ml-[30px]">17</p>
-            </div>
-            <div class="flex items-center mb-[53px]">
-                <span class="material-icons text-[40px] text-[#9CCC65]">schedule</span>
-                <p class="text-[30px] ml-[30px]">Agosto</p>
-            </div>
-            <div class="flex items-center">
-                <span class="material-icons text-[40px] text-[#FACF43]">wb_sunny</span>
-                <p class="text-[30px] ml-[30px]">2025</p>
-            </div>
+      <!-- Cuadro de fecha -->
+      <div class="glassy w-[250px] h-[281px] mt-0 mb-[53px] ml-[72px] flex flex-col items-start px-4 pt-6 pb-6 rounded-[15px] text-white">
+        <div class="flex items-center mb-[53px]">
+          <span class="material-icons text-[40px] text-[#7C95FF]">calendar_today</span>
+          <p class="text-[30px] ml-[30px]">17</p>
         </div>
+        <div class="flex items-center mb-[53px]">
+          <span class="material-icons text-[40px] text-[#9CCC65]">schedule</span>
+          <p class="text-[30px] ml-[30px]">Agosto</p>
+        </div>
+        <div class="flex items-center">
+          <span class="material-icons text-[40px] text-[#FACF43]">wb_sunny</span>
+          <p class="text-[30px] ml-[30px]">2025</p>
+        </div>
+      </div>
     </aside>
 
     <!-- Contenido principal -->
     <main class="flex-1 flex flex-col p-6 pl-[72px]">
-
       <!-- Barra superior -->
       <div class="flex justify-end items-center mb-6 gap-4 w-[1500px] mx-auto">
 
-
-
         <!-- FAMILIA: botón + dropdown -->
         <div x-data="{ open: false }" class="relative w-[529px] mr-[50px]">
-          <!-- Botón principal (muestra la familia activa) -->
           <div @click="open = !open"
-              class="w-full h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md cursor-pointer">
+               class="w-full h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md cursor-pointer">
             <div class="flex items-center gap-3">
               <span class="material-icons text-[35px]">groups</span>
               <span>Familia: {{ familia_activa or ' ' }}</span>
@@ -132,14 +132,14 @@
 
           <!-- Dropdown -->
           <div x-show="open" x-transition
-              @click.outside="open = false"
-              class="absolute mt-2 w-full bg-white rounded-[15px] shadow-lg p-4 z-50">
+               @click.outside="open = false"
+               class="absolute mt-2 w-full bg-white rounded-[15px] shadow-lg p-4 z-50">
 
             <!-- Crear familia -->
             <form method="POST" action="{{ url_for('crear_familia') }}" class="flex gap-2">
               <input type="text" name="nombre_familia" required
-                    placeholder="Nombre de la familia"
-                    class="flex-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#01C38E]" />
+                     placeholder="Nombre de la familia"
+                     class="flex-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#01C38E]" />
               <button type="submit"
                       class="px-4 py-2 bg-[#01C38E] text-white rounded-lg hover:bg-[#037153]">
                 Añadir
@@ -169,12 +169,10 @@
                         <input type="hidden" name="nombre_familia" value="{{ fam }}">
                         <label class="relative inline-block w-12 h-6 align-middle">
                           <input type="checkbox" class="sr-only peer"
-                                onchange="this.form.submit()"
-                                {% if fam == familia_activa %} checked {% endif %}>
-                          <span class="absolute inset-0 bg-gray-300 rounded-full transition
-                                      peer-checked:bg-[#01C38E]"></span>
-                          <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform
-                                      peer-checked:translate-x-6"></span>
+                                 onchange="this.form.submit()"
+                                 {% if fam == familia_activa %} checked {% endif %}>
+                          <span class="absolute inset-0 bg-gray-300 rounded-full transition peer-checked:bg-[#01C38E]"></span>
+                          <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></span>
                         </label>
                       </form>
                     </li>
@@ -187,16 +185,8 @@
           </div>
         </div>
 
-        <!-- AlpineJS (si no lo tenés ya en la página) -->
+        <!-- AlpineJS -->
         <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
-
-
-
-
-
-
-
 
         <!-- Iconos configuración -->
         <div class="w-[309px] h-[60px] flex items-center justify-around glassy rounded-[15px]">
@@ -207,13 +197,35 @@
         </div>
       </div>
 
-      <!-- Contenedor central -->
-      <div class="w-[1500px] h-[917px] glassy-strong rounded-[15px] flex flex-col justify-center items-center mx-auto shadow-lg">
-        <p class="inkfree text-[40px] text-white text-center mt-[80px] mb-2 ml-[300px] mr-[300px]">
-          Bienvenido(a) a tu árbol genealógico. Aquí podrás registrar y descubrir tu historia familiar
-        </p>
-        <img src="../static/images/arbol.png" alt="Árbol" class="w-[720px] h-[720px]">
-      </div>
+      
+      <!-- Contenedor de búsqueda -->
+        <div class="w-[1500px] h-[917px] glassy-strong rounded-[15px] mx-auto shadow-lg p-6 flex flex-col">
+
+        <!-- Título -->
+        <h2 class="text-white text-2xl font-semibold mb-4">Buscar Personas</h2>
+
+        <!-- Área de respuestas estilo chatbot -->
+        <div id="chat-output" class="flex-1 glassy rounded-[15px] p-6 overflow-y-auto text-white text-lg space-y-4">
+            <!-- Mensaje de bienvenida dentro del cuadro -->
+            <div class="text-gray-200 max-w-[80%]">
+            Bienvenido al buscador del árbol familiar.  
+            Escribe el nombre de una persona y obtén la información relacionada.
+            </div>
+        </div>
+
+        <!-- Input + botón enviar -->
+        <form id="chat-form" class="mt-4 flex items-center glassy rounded-[15px] px-4 py-2">
+            <input type="text" id="chat-input" name="query" placeholder="Escribe un nombre..."
+                class="flex-1 bg-transparent focus:outline-none text-white text-lg placeholder-gray-300" />
+            <button type="submit"
+                    class="material-icons text-[30px] text-white hover:text-[#01C38E] transition">
+            send
+            </button>
+        </form>
+        </div>
+
+
+
     </main>
   </div>
 </body>

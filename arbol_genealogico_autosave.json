@@ -1,0 +1,11 @@
+{
+    "tiempo_actual": 2025,
+    "personas": [],
+    "familias": [
+        {
+            "id_familia": "125",
+            "nombre": "Papa Cutua",
+            "integrantes_cedulas": []
+        }
+    ]
+}

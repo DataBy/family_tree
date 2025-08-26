@@ -240,5 +240,10 @@ def _reset_si_reinicio():
         session.clear()
         session["boot_id"] = BOOT_ID
 
+
+@app.route("/search")
+def search():
+    return render_template("search.html", **ctx())
+
 if __name__ == "__main__":
     app.run(debug=True)
