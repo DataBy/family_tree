@@ -5,6 +5,7 @@
 #   cada celda = lista de personas (dicts)
 
 from typing import Dict, List, Tuple
+from datetime import datetime
 
 FamiliaMatriz = List[List[List[dict]]]
 familias: Dict[str, FamiliaMatriz] = {}
@@ -119,6 +120,7 @@ def _p_col(
     return {
         "nombre": nombre,
         "apellidos": apellidos,
+        "nombre_completo": f"{nombre} {apellidos}", 
         "cedula": ced,
         "fecha_nacimiento": fecha_nac,
         "fecha_defuncion": fecha_def,
@@ -271,3 +273,46 @@ def _seed_defaults():
 
 # Ejecutar seed al importar el módulo
 _seed_defaults()
+
+
+
+# Helpers para las búsquedas:
+def descendientes_vivos(nombre: str, familia: str) -> list[str]:
+    """Descendientes vivos de una persona (sin fecha_defuncion)."""
+    m = obtener_matriz(familia)
+    vivos = []
+    if not m: return vivos
+    for fila in m:
+        for col in fila:
+            for p in col:
+                if nombre in p["apellidos"] or nombre in p["nombre"]:  # simplificado
+                    if not p["fecha_defuncion"]:
+                        vivos.append(p["nombre"] + " " + p["apellidos"])
+    return vivos
+
+def nacidos_ultimos_10_anios(familia: str) -> list[str]:
+    m = obtener_matriz(familia)
+    actuales = []
+    if not m: return actuales
+    anio_actual = datetime.now().year
+    for fila in m:
+        for col in fila:
+            for p in col:
+                anio_nac = int(p["fecha_nacimiento"][:4])
+                if anio_actual - anio_nac <= 10:
+                    actuales.append(p["nombre"] + " " + p["apellidos"])
+    return actuales
+
+def fallecidos_menores_de_50(familia: str) -> list[str]:
+    m = obtener_matriz(familia)
+    out = []
+    if not m: return out
+    for fila in m:
+        for col in fila:
+            for p in col:
+                if p["fecha_defuncion"]:
+                    nac = int(p["fecha_nacimiento"][:4])
+                    defunc = int(p["fecha_defuncion"][:4])
+                    if defunc - nac < 50:
+                        out.append(p["nombre"] + " " + p["apellidos"])
+    return out

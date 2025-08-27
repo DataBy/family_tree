@@ -198,22 +198,20 @@
       </div>
 
       
-      <!-- Contenedor de búsqueda -->
+      <!-- Contenedor principal del chat -->
         <div class="w-[1500px] h-[917px] glassy-strong rounded-[15px] mx-auto shadow-lg p-6 flex flex-col">
-
-        <!-- Título -->
         <h2 class="text-white text-2xl font-semibold mb-4">Buscar Personas</h2>
 
-        <!-- Área de respuestas estilo chatbot -->
+        <!-- Área de chat -->
         <div id="chat-output" class="flex-1 glassy rounded-[15px] p-6 overflow-y-auto text-white text-lg space-y-4">
-            <!-- Mensaje de bienvenida dentro del cuadro -->
-            <div class="text-gray-200 max-w-[80%]">
-            Bienvenido al buscador del árbol familiar.  
-            Escribe el nombre de una persona y obtén la información relacionada.
+            <div class="flex justify-start">
+            <div class="bg-[#01C38E] text-white px-4 py-2 rounded-xl inline-block max-w-[70%]">
+                Bienvenido al buscador del árbol familiar. Escribe el nombre de una persona y obtén la información relacionada.
+            </div>
             </div>
         </div>
 
-        <!-- Input + botón enviar -->
+        <!-- Input -->
         <form id="chat-form" class="mt-4 flex items-center glassy rounded-[15px] px-4 py-2">
             <input type="text" id="chat-input" name="query" placeholder="Escribe un nombre..."
                 class="flex-1 bg-transparent focus:outline-none text-white text-lg placeholder-gray-300" />
@@ -223,6 +221,48 @@
             </button>
         </form>
         </div>
+
+        <script>
+        document.getElementById("chat-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const input = document.getElementById("chat-input");
+        const query = input.value.trim();
+        if (!query) return;
+
+        const chat = document.getElementById("chat-output");
+
+        // Mensaje del usuario
+        const userMsgWrapper = document.createElement("div");
+        userMsgWrapper.className = "flex justify-end";
+        const userMsg = document.createElement("div");
+        userMsg.className = "bg-[#01C38E] text-white px-4 py-2 rounded-xl inline-block max-w-[70%]";
+        userMsg.innerText = query;
+        userMsgWrapper.appendChild(userMsg);
+        chat.appendChild(userMsgWrapper);
+
+        // Enviar al backend
+        const res = await fetch("/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+            body: "query=" + encodeURIComponent(query)
+        });
+        const data = await res.json();
+
+        // Mensaje del bot
+        const botMsgWrapper = document.createElement("div");
+        botMsgWrapper.className = "flex justify-start";
+        const botMsg = document.createElement("div");
+        botMsg.className = "bg-[#01C38E] text-white px-4 py-2 rounded-xl inline-block max-w-[70%]";
+        botMsg.innerText = data.reply;
+        botMsgWrapper.appendChild(botMsg);
+        chat.appendChild(botMsgWrapper);
+
+        input.value = "";
+        chat.scrollTop = chat.scrollHeight;
+        });
+        </script>
+
+
 
 
 
