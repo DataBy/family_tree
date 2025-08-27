@@ -1,5 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from services import db
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, request
+import json
+import unicodedata
+import os
+from services import db, buscador
 
 app = Flask(__name__)
 app.secret_key = "supersecreto"  # Necesario para flash
@@ -241,9 +244,108 @@ def _reset_si_reinicio():
         session["boot_id"] = BOOT_ID
 
 
+
+
+# Lógica de search:
+
 @app.route("/search")
 def search():
-    return render_template("search.html", **ctx())
+    return render_template("search.html", **ctx())   # dejamos SOLO esta versión
 
+
+# Cargar JSON de respuestas
+BASE_DIR = os.path.dirname(__file__)  # carpeta backend
+DATA_PATH = os.path.join(BASE_DIR, "data", "responses.json")
+
+with open(DATA_PATH, "r", encoding="utf-8") as f:
+    RESPONSES = json.load(f)
+
+
+def normalize_text(text: str) -> str:
+    """Convierte texto a minúsculas y elimina tildes."""
+    text = text.lower()
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+    return text
+
+
+
+def get_active_family_and_matrix():
+    fam = session.get("familia_activa")
+    if not fam or not db.existe_familia(fam):
+        fam = next(iter(db.familias), None)  # primera familia disponible
+    matriz = db.obtener_matriz(fam) if fam else []
+    return fam, (matriz or [])
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    user_raw = (request.form.get("query") or "").strip()
+    user_msg = normalize_text(user_raw)
+
+    # Exponer matriz al módulo 'buscador'
+    fam, matriz = get_active_family_and_matrix()
+    setattr(buscador, "matriz", matriz)  # <- clave para que 'relacion()' funcione
+
+    reply = None
+
+    # ----- saludos/despedidas -----
+    if any(saludo in user_msg for saludo in ["hola", "buenas", "hey"]):
+        reply = RESPONSES["saludos"][0]
+
+    elif any(desp in user_msg for desp in ["adios", "chao", "bye"]):
+        reply = RESPONSES["despedidas"][0]
+
+    # ----- P1: relación A-B -----
+    elif "relacion" in user_msg and "entre" in user_msg:
+        try:
+            after_entre = user_msg.split("entre", 1)[1].strip()
+            partes = after_entre.split(" y ")
+            if len(partes) == 2:
+                persona_a = partes[0].replace("persona", "").strip()
+                persona_b = partes[1].replace("persona", "").strip()
+                reply = buscador.relacion(persona_a, persona_b)
+            else:
+                reply = "No entendí los nombres de las personas."
+        except Exception as e:
+            reply = f"Error al procesar los nombres: {e}"
+
+    # ----- P2: primos -----
+    elif "primos" in user_msg:
+        nombre = user_msg.split()[-1].strip()
+        reply = f"Primos de {nombre}: función en desarrollo."
+
+    # ----- P3: antepasados maternos -----
+    elif "antepasados" in user_msg and "maternos" in user_msg:
+        nombre = user_msg.split()[-1].strip()
+        reply = f"Antepasados maternos de {nombre}: función en desarrollo."
+
+    # ----- P4: descendientes vivos -----
+    elif "descendientes" in user_msg and "vivos" in user_msg:
+        nombre = user_msg.split()[-2].strip()
+        vivos = db.descendientes_vivos(nombre, fam) if fam else []
+        reply = f"Descendientes vivos de {nombre}: {', '.join(vivos) or 'ninguno'}."
+
+    # ----- P5: nacidos últimos 10 años -----
+    elif "ultimos 10 anos" in user_msg or "ultimos 10 años" in user_msg:
+        actuales = db.nacidos_ultimos_10_anios(fam) if fam else []
+        reply = f"Nacidos en los últimos 10 años: {', '.join(actuales) or 'ninguno'}."
+
+    # ----- P6: parejas con 2+ hijos -----
+    elif "parejas" in user_msg and "hijos" in user_msg:
+        reply = "Parejas con 2 o más hijos: función en desarrollo."
+
+    # ----- P7: fallecidos <50 -----
+    elif "fallecieron" in user_msg and "50" in user_msg:
+        menores = db.fallecidos_menores_de_50(fam) if fam else []
+        reply = f"Personas fallecidas antes de los 50: {', '.join(menores) or 'ninguna'}."
+
+    # ----- default -----
+    if not reply:
+        reply = RESPONSES["default"]
+
+    return jsonify({"reply": reply})
+
+
+# ------------------ MAIN ------------------
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,13 @@
+{
+  "saludos": [
+    "¡Hola! Soy el asistente del árbol familiar.",
+    "Bienvenido, ¿qué persona quieres buscar?",
+    "Estoy listo para ayudarte con tu consulta."
+  ],
+  "despedidas": [
+    "¡Hasta luego!",
+    "Que tengas un buen día.",
+    "Vuelve pronto al árbol familiar."
+  ],
+  "default": "Lo siento, no entendí tu consulta. Intenta de nuevo."
+}
