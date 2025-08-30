@@ -389,9 +389,158 @@ def chat():
 
 
 
+# =========================
+# Historial / Línea de tiempo
+# =========================
+def _norm_name(s: str) -> str:
+    s = (s or '').strip().lower()
+    s = unicodedata.normalize('NFD', s)
+    return ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+
+def _full_name(p: dict) -> str:
+    return (p.get('nombre_completo')
+            or f"{p.get('nombre','')} {p.get('apellidos','')}".strip())
+
+def _year_from_date(s: str | None) -> int | None:
+    s = (s or '').strip()
+    return int(s[:4]) if len(s) >= 4 and s[:4].isdigit() else None
+
 @app.route("/history")
 def history():
+    # Renderiza tu template de historial con el contexto de familia
     return render_template("history.html", **ctx())
+
+@app.route("/api/history")
+def api_history():
+    """
+    Devuelve JSON con:
+      {
+        "persona": { nombre_completo, genero, estado_civil, ... },
+        "eventos": [ {tipo, anio, detalle}, ... ]  // ordenado por año
+      }
+    Tipos: nacimiento, union_pareja, tuvo_hijo, enviudo, fallecimiento
+    """
+    nombre_q = (request.args.get("nombre") or "").strip()
+    if not nombre_q:
+        return jsonify({"persona": None, "eventos": []})
+
+    # Familia/matriz activa (usa la de sesión o la primera disponible)
+    fam = session.get("familia_activa")
+    if not fam or fam not in db.familias:
+        fam = next(iter(db.familias), None)
+    matriz = db.familias.get(fam, [])
+
+    # Buscar persona y sus posiciones
+    target = None
+    positions: list[tuple[int,int,int]] = []
+    tnorm = _norm_name(nombre_q)
+
+    for r, fila in enumerate(matriz):
+        for c, celda in enumerate(fila):
+            for i, p in enumerate(celda):
+                if _norm_name(_full_name(p)) == tnorm:
+                    if target is None:
+                        target = p
+                    positions.append((r, c, i))
+
+    if not target:
+        # No encontrada
+        return jsonify({"persona": None, "eventos": []})
+
+    # Recolectar cónyuges y descendencia directa por columna
+    spouses: list[dict] = []
+    children: list[dict] = []
+    seen_spouse = set()
+    seen_child = set()
+
+    for (r, c, i) in positions:
+        # Filas de pareja en tu modelo: 0 y 2 (fila siguiente contiene hijos)
+        if r in (0, 2):
+            # Encontrar cónyuge en la misma celda por pares [0,1], [2,3], ...
+            base = (i // 2) * 2
+            pair_idx = [base, base + 1]
+            for j in pair_idx:
+                if j == i:
+                    continue
+                if 0 <= j < len(matriz[r][c]):
+                    sp = matriz[r][c][j]
+                    ksp = _norm_name(_full_name(sp))
+                    if ksp not in seen_spouse:
+                        spouses.append(sp)
+                        seen_spouse.add(ksp)
+
+            # Hijos: fila r+1, misma columna c
+            if r + 1 < len(matriz) and c < len(matriz[r + 1]):
+                for ch in matriz[r + 1][c]:
+                    kch = _norm_name(_full_name(ch))
+                    if kch not in seen_child:
+                        children.append(ch)
+                        seen_child.add(kch)
+
+    # Construcción de eventos
+    eventos: list[dict] = []
+
+    # Nacimiento
+    y_nac = _year_from_date(target.get("fecha_nacimiento"))
+    if y_nac:
+        eventos.append({"tipo": "nacimiento", "anio": y_nac, "detalle": ""})
+
+    # Hijos (un evento por cada hijo)
+    for ch in children:
+        yh = _year_from_date(ch.get("fecha_nacimiento"))
+        eventos.append({
+            "tipo": "tuvo_hijo",
+            "anio": yh,
+            "detalle": _full_name(ch)
+        })
+
+    # Unión de pareja (1 evento por cónyuge; año estimado como el del primer hijo - 1 si se puede)
+    # Si no hay hijos, se deja sin año.
+    earliest_child_years = [ _year_from_date(ch.get("fecha_nacimiento")) for ch in children if _year_from_date(ch.get("fecha_nacimiento")) ]
+    est_union_year = (min(earliest_child_years) - 1) if earliest_child_years else None
+
+    for sp in spouses:
+        eventos.append({
+            "tipo": "union_pareja",
+            "anio": est_union_year,
+            "detalle": _full_name(sp)
+        })
+
+    # Enviudó (si alguno de los cónyuges tiene fecha_defuncion)
+    for sp in spouses:
+        y_def_sp = _year_from_date(sp.get("fecha_defuncion"))
+        if y_def_sp:
+            eventos.append({
+                "tipo": "enviudo",
+                "anio": y_def_sp,
+                "detalle": f"Por muerte de {_full_name(sp)}"
+            })
+
+    # Fallecimiento
+    y_def = _year_from_date(target.get("fecha_defuncion"))
+    if y_def:
+        eventos.append({"tipo": "fallecimiento", "anio": y_def, "detalle": ""})
+
+    # Orden cronológico (los eventos sin año van al final)
+    def sort_key(ev: dict):
+        a = ev.get("anio")
+        return (a is None, a, ev.get("tipo", ""))
+
+    eventos.sort(key=sort_key)
+
+    persona_payload = {
+        "nombre_completo": _full_name(target),
+        "genero": target.get("genero"),
+        "estado_civil": target.get("estado_civil"),
+        "cedula": target.get("cedula"),
+        "residencia": target.get("residencia"),
+        "fecha_nacimiento": target.get("fecha_nacimiento"),
+        "fecha_defuncion": target.get("fecha_defuncion"),
+    }
+
+    return jsonify({"persona": persona_payload, "eventos": eventos})
+
+
 
 # ------------------ MAIN ------------------
 if __name__ == "__main__":
