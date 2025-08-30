@@ -199,7 +199,11 @@
         <!-- Iconos configuración -->
         <div class="w-[309px] h-[60px] flex items-center justify-around glassy rounded-[15px]">
           <span class="material-icons text-[40px] hover-zoom">refresh</span>
-          <span class="material-icons text-[40px] hover-zoom">notifications</span>
+          
+          <a href="{{ url_for('love') }}" class="cursor-pointer">
+            <span class="material-icons text-[40px] hover-zoom">favorite</span>
+          </a>
+
           <span class="material-icons text-[40px] hover-zoom">settings</span>
           <span class="material-icons text-[40px] hover-zoom">logout</span>
         </div>

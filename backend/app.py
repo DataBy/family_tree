@@ -44,6 +44,7 @@ def personas():
             "genero": request.form.get("genero"),
             "residencia": request.form.get("residencia"),
             "estado_civil": request.form.get("estado_civil"),
+            "afinidades": request.form.getlist("afinidades") or [],
         }
 
         try:
@@ -539,6 +540,309 @@ def api_history():
     }
 
     return jsonify({"persona": persona_payload, "eventos": eventos})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Relaciones UNIONES DE PAREJA
+@app.route("/love", methods=["GET", "POST"])
+def love():
+    from datetime import datetime, date
+    import unicodedata
+
+    # ---------- helpers de normalización / búsqueda ----------
+    def _norm(s: str) -> str:
+        s = (s or "").strip().lower()
+        s = unicodedata.normalize("NFD", s)
+        return "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
+
+    def _full(p: dict) -> str:
+        return p.get("nombre_completo") or f"{p.get('nombre','')} {p.get('apellidos','')}".strip()
+
+    def get_active():
+        fam = session.get("familia_activa")
+        m = db.obtener_matriz(fam) if fam else []
+        return fam, (m or [])
+
+    def find_positions(nombre: str, matriz: list[list[list[dict]]]):
+        t = _norm(nombre)
+        out = []
+        for i, fila in enumerate(matriz):
+            for j, celda in enumerate(fila):
+                for k, p in enumerate(celda):
+                    if _norm(_full(p)) == t:
+                        out.append((i, j, k))
+        return out
+
+    def find_person(nombre: str, matriz: list[list[list[dict]]]) -> dict | None:
+        t = _norm(nombre)
+        for fila in matriz:
+            for celda in fila:
+                for p in celda:
+                    if _norm(_full(p)) == t:
+                        return p
+        return None
+
+    # ---------- helpers de edad / reglas ----------
+    def _age_from_ymd(fecha: str) -> int | None:
+        try:
+            y, m, d = map(int, fecha[:10].split("-"))
+            today = date.today()
+            return today.year - y - ((today.month, today.day) < (m, d))
+        except Exception:
+            return None
+
+    def edad_actual(p: dict) -> int | None:
+        return _age_from_ymd(p.get("fecha_nacimiento") or "")
+
+    def disponible(p: dict) -> bool:
+        est = (p.get("estado_civil") or "").strip().lower()
+        if est.startswith("casad"):  # casado/casada
+            return False
+        if p.get("union_con"):
+            return False
+        return True
+
+    def afinidad_score(a: dict, b: dict) -> tuple[int, int]:
+        A = set((a.get("afinidades") or []))
+        B = set((b.get("afinidades") or []))
+        inter = len(A & B)
+        base = max(len(A | B), 1)
+        score = round(100 * inter / base)
+        return score, inter
+
+    def genetica_ok(a: dict, b: dict, matriz: list[list[list[dict]]]) -> tuple[bool, str]:
+        ap_a = (a.get("apellidos") or "").strip().lower()
+        ap_b = (b.get("apellidos") or "").strip().lower()
+        if ap_a and ap_a == ap_b:
+            return False, "Apellidos idénticos (riesgo genético)."
+        # hermanos consanguíneos: misma celda en filas 1 o 3
+        pos_a = find_positions(_full(a), matriz)
+        pos_b = find_positions(_full(b), matriz)
+        for (fa, ca, ia) in pos_a:
+            for (fb, cb, ib) in pos_b:
+                if fa == fb and ca == cb and ia != ib and fa in (1, 3):
+                    return False, "Parentesco directo (hermanos)."
+        return True, "Riesgo bajo"
+
+    def validar_union(pA: dict, pB: dict, matriz: list[list[list[dict]]]) -> dict:
+        reasons = []
+        rules = {}
+
+        # 1) Mayores de 18
+        eA, eB = edad_actual(pA), edad_actual(pB)
+        rules["mayores_edad"] = bool(eA is not None and eA >= 18 and eB is not None and eB >= 18)
+        if not rules["mayores_edad"]:
+            reasons.append("Ambas personas deben ser mayores de 18.")
+
+        # 2) Disponibilidad (no casados/unidos)
+        rules["disponibles"] = bool(disponible(pA) and disponible(pB))
+        if not rules["disponibles"]:
+            reasons.append("Alguna de las personas ya está unida o casada.")
+
+        # 3) Brecha de edad ≤ 15
+        if eA is not None and eB is not None:
+            rules["brecha_edad_ok"] = abs(eA - eB) <= 15
+        else:
+            rules["brecha_edad_ok"] = False
+        if not rules["brecha_edad_ok"]:
+            reasons.append("La diferencia de edad supera 15 años.")
+
+        # 4) Afinidad emocional (≥ 2 coincidencias y ≥ 70%)
+        score, matches = afinidad_score(pA, pB)
+        rules["afinidad_ok"] = bool(matches >= 2 and score >= 70)
+        rules["afinidad_detalle"] = f"{matches} coincidencias, {score}%"
+        if not rules["afinidad_ok"]:
+            reasons.append("Afinidad insuficiente (mínimo 2 coincidencias y 70%).")
+
+        # 5) Compatibilidad genética
+        g_ok, g_det = genetica_ok(pA, pB, matriz)
+        rules["genetica_ok"] = bool(g_ok)
+        rules["genetica_detalle"] = g_det
+        if not rules["genetica_ok"]:
+            reasons.append(f"Incompatibilidad genética: {g_det}")
+
+        ok = all([rules["mayores_edad"], rules["disponibles"], rules["brecha_edad_ok"], rules["afinidad_ok"], rules["genetica_ok"]])
+        return {"ok": ok, "score": score, "rules": rules, "reasons": reasons}
+
+    # ---------- helpers para reflejar la unión en la MATRIZ (fila 2) ----------
+    def _pkey(p: dict) -> str:
+        ced = (p.get("cedula") or "").strip()
+        if ced:
+            return f"ced-{ced}"
+        return f"{p.get('nombre','')}|{p.get('apellidos','')}|{p.get('fecha_nacimiento','')}"
+
+    def _ensure_cell(matriz, r, c):
+        while len(matriz) <= r:
+            matriz.append([])
+        while len(matriz[r]) <= c:
+            matriz[r].append([])
+
+    def _remove_from_row2(matriz, pkey: str):
+        if len(matriz) <= 2:
+            return
+        for celda in matriz[2]:
+            for i in range(len(celda) - 1, -1, -1):
+                if _pkey(celda[i]) == pkey:
+                    del celda[i]
+
+    def _place_couple_in_row2(matriz, col: int, A: dict, B: dict):
+        _ensure_cell(matriz, 2, col)
+        _remove_from_row2(matriz, _pkey(A))
+        _remove_from_row2(matriz, _pkey(B))
+        celda = matriz[2][col]
+        existing = {_pkey(x) for x in celda}
+        if _pkey(A) not in existing:
+            celda.append(A)
+        if _pkey(B) not in existing:
+            celda.append(B)
+
+    def _choose_col_for_union(matriz, A: dict, B: dict) -> int:
+        # preferí columna donde ya esté alguno en fila 2; si no, la de fila 1; si no, 0.
+        posA = find_positions(_full(A), matriz)
+        posB = find_positions(_full(B), matriz)
+        for (r, c, _) in posA:
+            if r == 2:
+                return c
+        for (r, c, _) in posB:
+            if r == 2:
+                return c
+        for (r, c, _) in posA:
+            if r == 1:
+                return c
+        for (r, c, _) in posB:
+            if r == 1:
+                return c
+        return 0
+
+    # ---------- GET: UI ----------
+    if request.method == "GET":
+        from datetime import datetime as _dt
+        months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+        now = _dt.now()
+        return render_template("love.html",
+                               now_day=now.day, now_month=months[now.month-1], now_year=now.year,
+                               **ctx())
+
+    # ---------- POST JSON API (fetch desde love.html) ----------
+    if request.is_json:
+        data = request.get_json(force=True) or {}
+        mode = (data.get("mode") or "").lower()
+        fam, matriz = get_active()
+
+        if not fam or not db.existe_familia(fam):
+            return jsonify({"ok": False, "message": "Seleccioná una familia activa."}), 400
+
+        if mode == "search":
+            q = _norm(data.get("q") or "")
+            items, seen = [], set()
+            for fila in matriz:
+                for celda in fila:
+                    for p in celda:
+                        name = _full(p); tn = _norm(name)
+                        if q and q not in tn: 
+                            continue
+                        if tn in seen: 
+                            continue
+                        seen.add(tn)
+                        items.append({"nombre_completo": name})
+            return jsonify({ "ok": True, "items": items[:25] })
+
+        if mode == "persona":
+            nombre = data.get("nombre") or ""
+            p = find_person(nombre, matriz)
+            if not p:
+                return jsonify({ "ok": False, "message": "No encontrado" }), 404
+            out = dict(p)
+            out["nombre_completo"] = _full(p)
+            out["edad"] = edad_actual(p)
+            out["afinidades"] = p.get("afinidades") or []
+            return jsonify(out)
+
+        if mode in ("validar", "validate"):
+            a = data.get("a") or ""; b = data.get("b") or ""
+            pA = find_person(a, matriz); pB = find_person(b, matriz)
+            if not pA or not pB:
+                return jsonify({"ok": False, "message": "Persona(s) no encontradas"}), 404
+            res = validar_union(pA, pB, matriz)
+            res["message"] = "Compatibilidad suficiente." if res["ok"] else "No cumplen las reglas."
+            return jsonify(res)
+
+        if mode in ("unir", "union"):
+            a = data.get("a") or ""; b = data.get("b") or ""
+            pA = find_person(a, matriz); pB = find_person(b, matriz)
+            if not pA or not pB:
+                return jsonify({"ok": False, "message": "Persona(s) no encontradas"}), 404
+
+            res = validar_union(pA, pB, matriz)
+            if not res["ok"]:
+                res["message"] = "No se pudo unir"
+                return jsonify(res), 200
+
+            # 1) Marcar estado / metadatos
+            pA["estado_civil"] = "Casado"
+            pB["estado_civil"] = "Casado"
+            pA["union_con"] = _full(pB)
+            pB["union_con"] = _full(pA)
+            pA["anio_union"] = datetime.now().year
+            pB["anio_union"] = datetime.now().year
+
+            # 2) Colocar físicamente la pareja en la FILA 2 de la matriz (misma columna)
+            col = _choose_col_for_union(matriz, pA, pB)
+            _place_couple_in_row2(matriz, col, pA, pB)
+
+            # 3) (Opcional) devolver elements para refrescar árbol si el front quiere
+            payload = {"ok": True, "message": "Pareja unida correctamente", "rules": res["rules"], "reasons": []}
+            try:
+                elements = build_elements(matriz or [])
+                payload["elements"] = elements
+            except Exception:
+                pass
+            return jsonify(payload), 200
+
+        return jsonify({"ok": False, "message": "Modo no soportado"}), 400
+
+    # ---------- POST clásico (form) ----------
+    a = (request.form.get("a") or "").strip()
+    b = (request.form.get("b") or "").strip()
+    fam, matriz = get_active()
+    if not fam or not db.existe_familia(fam):
+        flash("Seleccioná una familia activa.")
+        return redirect(url_for("love"))
+
+    if not a or not b:
+        flash("Indicá ambos nombres.")
+        return redirect(url_for("love"))
+
+    pA = find_person(a, matriz); pB = find_person(b, matriz)
+    if not pA or not pB:
+        flash("Persona(s) no encontradas.")
+        return redirect(url_for("love"))
+
+    res = validar_union(pA, pB, matriz)
+    if not res["ok"]:
+        flash("No se pudo unir: " + "; ".join(res["reasons"]))
+        return redirect(url_for("love"))
+
+    # aplicar unión + mover a fila 2
+    pA["estado_civil"] = "Casado"; pB["estado_civil"] = "Casado"
+    pA["union_con"] = _full(pB);   pB["union_con"] = _full(pA)
+    pA["anio_union"] = datetime.now().year; pB["anio_union"] = datetime.now().year
+    col = _choose_col_for_union(matriz, pA, pB)
+    _place_couple_in_row2(matriz, col, pA, pB)
+
+    flash("¡Pareja unida correctamente!")
+    return redirect(url_for("love"))
 
 
 

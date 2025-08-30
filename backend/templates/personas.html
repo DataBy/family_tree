@@ -206,7 +206,11 @@
         <!-- Iconos configuración -->
         <div class="w-[309px] h-[60px] flex items-center justify-around glassy rounded-[15px]">
           <span class="material-icons text-[40px] hover-zoom">refresh</span>
-          <span class="material-icons text-[40px] hover-zoom">notifications</span>
+          
+          <a href="{{ url_for('love') }}" class="cursor-pointer">
+            <span class="material-icons text-[40px] hover-zoom">favorite</span>
+          </a>
+
           <span class="material-icons text-[40px] hover-zoom">settings</span>
           <span class="material-icons text-[40px] hover-zoom">logout</span>
         </div>
@@ -227,18 +231,17 @@
     Añadir Personas
   </h2>
 
-<!-- Mensaje de persona añadida -->
-
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <div id="toast-msg"
-         class="fixed top-6 left-1/2 transform -translate-x-1/2
-                p-4 rounded-lg text-white text-xl shadow-md z-50"
-         style="background-color: #01C38E;">
-      {{ messages[0] }}
-    </div>
-  {% endif %}
-{% endwith %}
+  <!-- Mensaje de persona añadida -->
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div id="toast-msg"
+           class="fixed top-6 left-1/2 transform -translate-x-1/2
+                  p-4 rounded-lg text-white text-xl shadow-md z-50"
+           style="background-color: #01C38E;">
+        {{ messages[0] }}
+      </div>
+    {% endif %}
+  {% endwith %}
 
   <!-- Cuadro glassy del formulario -->
   <div class="glassy absolute rounded-[15px] p-10 text-white w-[1400px] h-auto mx-auto relative z-0">
@@ -250,142 +253,163 @@
 
         <form method="POST" action="{{ url_for('personas') }}" class="flex flex-row gap-10 relative z-10">
 
-            <!-- Columna izquierda: Campos -->
-            <div class="flex flex-col flex-1 gap-6">
+          <!-- Columna izquierda: Campos -->
+          <div class="flex flex-col flex-1 gap-6">
 
-                <!-- Nombre -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Nombre</label>
-                <input type="text" name="nombre" required
-                        class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                        placeholder="Ingrese el nombre" />
-                </div>
-
-                <!-- Apellidos -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Apellidos</label>
-                <input type="text" name="apellidos" required
-                        class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                        placeholder="Ingrese los apellidos" />
-                </div>
-
-                <!-- Cédula -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Cédula</label>
-                <input type="text" name="cedula"
-                        class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                        placeholder="Digite la cédula" />
-                </div>
-
-                <!-- Fecha nacimiento -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Fecha de nacimiento</label>
-                <input type="date" name="fecha_nacimiento"
-                        class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
-                </div>
-
-                <!-- Fecha defunción -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Fecha de defunción</label>
-                <input type="date" name="fecha_defuncion"
-                        class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
-                </div>
-
-                <!-- Género -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Género</label>
-                <select name="genero" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                    <option class="text-black">Masculino</option>
-                    <option class="text-black">Femenino</option>
-                    <option class="text-black">Otro</option>
-                </select>
-                </div>
-
-                <!-- Lugar de residencia -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Lugar de residencia</label>
-                <select name="residencia" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                    <option class="text-black">San José</option>
-                    <option class="text-black">Alajuela</option>
-                    <option class="text-black">Cartago</option>
-                    <option class="text-black">Heredia</option>
-                    <option class="text-black">Guanacaste</option>
-                    <option class="text-black">Puntarenas</option>
-                    <option class="text-black">Limón</option>
-                </select>
-                </div>
-
-                <!-- Estado civil -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Estado Civil</label>
-                <select name="estado_civil" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                    <option class="text-black">Soltero</option>
-                    <option class="text-black">Casado</option>
-                    <option class="text-black">Divorciado</option>
-                    <option class="text-black">Viudo</option>
-                </select>
-                </div>
-
-                <!-- Nivel generacional -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Nivel generacional</label>
-                <input type="number" name="nivel" required
-                        class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                        placeholder="Ej: 0, 1, 2..." />
-                </div>
-
-                <!-- Número de sub-familia -->
-                <div class="flex items-center gap-[91px]">
-                <label class="w-[350px] text-[30px] font-medium">Número de sub-familia</label>
-                <input type="number" name="subfamilia" required
-                        class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                        placeholder="Ej: 0, 1, 2..." />
-                </div>
-
+            <!-- Nombre -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Nombre</label>
+              <input type="text" name="nombre" required
+                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                     placeholder="Ingrese el nombre" />
             </div>
 
-            <!-- Columna derecha: Nota + Botones -->
-            <div class="flex flex-col gap-6 items-start">
-
-                <!-- Nota -->
-                <div class="glassy rounded-lg flex flex-col gap-4 self-start p-6 text-[15px]">
-                <div class="flex items-center gap-2 text-gray-200 text-[30px]">
-                    <span class="material-icons text-yellow-400 text-[30px]">warning</span>
-                    <span class="font-bold">Nota:</span>
-                </div>
-                <p class="text-gray-200 text-justify leading-relaxed">
-                    <strong>Nivel generacional:</strong> indica la posición en el árbol familiar 
-                    (abuelos, padres, hijos, nietos, etc).  
-                    <br><br>
-                    <strong>Número de sub-familia:</strong> se usa cuando un miembro de una 
-                    generación forma su propia familia aparte. Por ejemplo, el hijo mayor se 
-                    casa y crea un nuevo hogar, ese sería sub-familia 1, y así sucesivamente.
-                </p>
-                </div>
-
-                <!-- Botones -->
-                <div class="flex flex-col gap-4 w-full mt-[220px]">
-                <button type="submit"
-                        class="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-white text-xl w-full bg-[#01C38E] hover:bg-[#037153] transition">
-                    <span class="material-icons">check_circle</span> Añadir
-                </button>
-
-                <button type="reset"
-                        class="flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-white text-xl w-full bg-[#DE8165] hover:bg-red-700 transition">
-                    <span class="material-icons">cancel</span> Cancelar
-                </button>
-                </div>
+            <!-- Apellidos -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Apellidos</label>
+              <input type="text" name="apellidos" required
+                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                     placeholder="Ingrese los apellidos" />
             </div>
+
+            <!-- Cédula -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Cédula</label>
+              <input type="text" name="cedula"
+                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                     placeholder="Digite la cédula" />
+            </div>
+
+            <!-- Fecha nacimiento -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Fecha de nacimiento</label>
+              <input type="date" name="fecha_nacimiento"
+                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
+            </div>
+
+            <!-- Fecha defunción -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Fecha de defunción</label>
+              <input type="date" name="fecha_defuncion"
+                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
+            </div>
+
+            <!-- Género -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Género</label>
+              <select name="genero" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                <option class="text-black">Masculino</option>
+                <option class="text-black">Femenino</option>
+                <option class="text-black">Otro</option>
+              </select>
+            </div>
+
+            <!-- Lugar de residencia -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Lugar de residencia</label>
+              <select name="residencia" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                <option class="text-black">San José</option>
+                <option class="text-black">Alajuela</option>
+                <option class="text-black">Cartago</option>
+                <option class="text-black">Heredia</option>
+                <option class="text-black">Guanacaste</option>
+                <option class="text-black">Puntarenas</option>
+                <option class="text-black">Limón</option>
+              </select>
+            </div>
+
+            <!-- Estado civil -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Estado Civil</label>
+              <select name="estado_civil" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                <option class="text-black">Soltero</option>
+                <option class="text-black">Casado</option>
+                <option class="text-black">Divorciado</option>
+                <option class="text-black">Viudo</option>
+              </select>
+            </div>
+
+            <!-- Nivel generacional -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Nivel generacional</label>
+              <input type="number" name="nivel" required
+                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                     placeholder="Ej: 0, 1, 2..." />
+            </div>
+
+            <!-- Número de sub-familia -->
+            <div class="flex items-center gap-[91px]">
+              <label class="w-[350px] text-[30px] font-medium">Número de sub-familia</label>
+              <input type="number" name="subfamilia" required
+                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                     placeholder="Ej: 0, 1, 2..." />
+            </div>
+
+          </div>
+
+          <!-- Columna derecha: Nota + Afinidades + Botones -->
+          <div class="flex flex-col gap-6 items-start w-[300px]">
+
+            <!-- Nota (original) -->
+            <div class="glassy rounded-lg flex flex-col gap-4 self-start p-6 text-[15px] w-full">
+              <div class="flex items-center gap-2 text-gray-200 text-[30px]">
+                <span class="material-icons text-yellow-400 text-[30px]">warning</span>
+                <span class="font-bold">Nota:</span>
+              </div>
+              <p class="text-gray-200 text-justify leading-relaxed">
+                <strong>Nivel generacional:</strong> indica la posición en el árbol familiar 
+                (abuelos, padres, hijos, nietos, etc).  
+                <br><br>
+                <strong>Número de sub-familia:</strong> se usa cuando un miembro de una 
+                generación forma su propia familia aparte. Por ejemplo, el hijo mayor se 
+                casa y crea un nuevo hogar, ese sería sub-familia 1, y así sucesivamente.
+              </p>
+            </div>
+
+            <!-- Afinidades -->
+            <div class="glassy rounded-lg p-4 w-full text-base mt-[0px] mb-[12px]">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons text-pink-300 text-[20px]">favorite</span>
+                <h3 class="text-[18px] font-semibold">Afinidades</h3>
+              </div>
+
+              <!-- grid con inputs más grandes -->
+              <div class="grid grid-cols-2 gap-2">
+                {% set AFINIDADES = [
+                  'música','lectura','viajes','deporte',
+                  'cine','arte','tecnología','fotografía'
+                ] %}
+                {% for it in AFINIDADES %}
+                <label class="flex items-center gap-3 px-3 py-2 rounded bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer">
+                  <input type="checkbox" name="afinidades" value="{{ it }}" class="w-4 h-4 accent-emerald-400">
+                  <span class="select-none text-sm">{{ it|capitalize }}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Botones alineados al cuadro -->
+            <div class="flex flex-row gap-4 w-full">
+              <button type="submit"
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#01C38E] hover:bg-[#037153] transition">
+                <span class="material-icons">check_circle</span> Añadir
+              </button>
+
+              <button type="reset"
+                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#DE8165] hover:bg-red-700 transition">
+                <span class="material-icons">cancel</span> Cancelar
+              </button>
+            </div>
+          </div>
+
 
         </form>
 
-
-        </div>
-        </div>
+      </div>
     </div>
-    </div>
-
+  </div>
 </div>
+
 
         
       </div>
