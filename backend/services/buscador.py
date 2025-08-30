@@ -1,6 +1,7 @@
 # services/buscador.py
 from . import db
 import unicodedata
+from collections import deque
 
 # La app asigna aquí la matriz de la familia activa en cada /chat:
 #   setattr(buscador, "matriz", matriz)
@@ -121,6 +122,262 @@ def abuelos_de(h: str) -> set[str]:
                 for p in matriz[0][j]:
                     ab.add(_full(p))
     return ab
+
+# =============================
+# Helpers Preguntas antepasados, etc...
+# =============================
+def _children_of(nombre: str) -> set[str]:
+    """
+    Hijos directos de 'nombre' considerando ambas transiciones del modelo:
+    fila0->fila1 (fundadores->hijos) y fila2->fila3 (parejas->hijos).
+    """
+    hijos = set()
+    # fila 0 -> fila 1 (misma columna)
+    if len(matriz) > 1:
+        for j, celda in enumerate(matriz[0]):
+            if _in_celda(celda, nombre) != -1 and j < len(matriz[1]):
+                for h in matriz[1][j]:
+                    hijos.add(_full(h))
+
+    # fila 2 -> fila 3 (misma columna)
+    if len(matriz) > 3:
+        for j, celda in enumerate(matriz[2]):
+            if _in_celda(celda, nombre) != -1 and j < len(matriz[3]):
+                for h in matriz[3][j]:
+                    hijos.add(_full(h))
+
+    return hijos
+
+
+def _esta_vivo(nombre: str) -> bool:
+    """Devuelve True si existe alguna aparición de la persona sin fecha_defuncion."""
+    target = _norm(nombre)
+    for fila in (matriz or []):
+        for celda in fila:
+            for p in celda:
+                if _norm(_full(p)) == target:
+                    if not (p.get("fecha_defuncion") or "").strip():
+                        return True
+    return False
+
+
+def primos_primer_grado(nombre: str) -> list[str]:
+    """
+    Primos de primer grado de 'nombre':
+    hijos de los hermanos de cada uno de sus padres.
+    """
+    primos = set()
+    padres = padres_de_hijo(nombre)
+    if not padres:
+        return []
+
+    for padre in padres:
+        for tio in hermanos_de(padre):
+            primos.update(_children_of(tio))
+
+    # quitarme a mí mismo (por duplicidad de nombres)
+    primos = [n for n in primos if _norm(n) != _norm(nombre)]
+    return sorted(primos)
+
+
+def descendientes_vivos(nombre: str) -> list[str]:
+    """
+    Todos los descendientes vivos (hijos, nietos, bisnietos, ...) de 'nombre'.
+    BFS por generaciones usando _children_of().
+    """
+    vivos = set()
+    visitados = set()
+    q = deque([nombre])
+
+    while q:
+        actual = q.popleft()
+        key = _norm(actual)
+        if key in visitados:
+            continue
+        visitados.add(key)
+
+        for h in _children_of(actual):
+            if _esta_vivo(h):
+                vivos.add(h)
+            q.append(h)
+
+    vivos.discard(nombre)
+    return sorted(vivos)
+
+
+
+
+
+def _lookup_person(nombre: str) -> dict | None:
+    """Devuelve el primer dict de persona cuyo nombre completo coincide (normalizado)."""
+    t = _norm(nombre)
+    for fila in (matriz or []):
+        for celda in fila:
+            k = _in_celda(celda, nombre)
+            if k != -1:
+                return celda[k]
+    return None
+
+def hijos_de_persona(nombre: str) -> set[str]:
+    """
+    Hijos de una persona (por columna):
+      - Si está en fila 0 (parejas fundadoras) → hijos están en fila 1.
+      - Si está en fila 2 (parejas de hijos)   → hijos están en fila 3.
+    Devuelve nombres completos (set) en ambas capas si aplica.
+    """
+    hijos = set()
+    if not matriz:
+        return hijos
+
+    # Caso fila 0 → hijos en fila 1
+    if len(matriz) > 1 and len(matriz[0]) == len(matriz[1]):
+        for j, celda in enumerate(matriz[0]):
+            if _in_celda(celda, nombre) != -1:
+                for p in matriz[1][j]:
+                    hijos.add(_full(p))
+
+    # Caso fila 2 → hijos en fila 3
+    if len(matriz) > 3 and len(matriz[2]) == len(matriz[3]):
+        for j, celda in enumerate(matriz[2]):
+            if _in_celda(celda, nombre) != -1:
+                for p in matriz[3][j]:
+                    hijos.add(_full(p))
+
+    return hijos
+
+
+def parejas_con_mas_de_dos_hijos() -> list[str]:
+    """
+    Devuelve las parejas (nombre1 + nombre2) que tienen 2 o más hijos en común.
+    """
+    resultados = []
+    if not matriz:
+        return resultados
+
+    for fila in (0, 2):  # filas de parejas
+        if fila + 1 >= len(matriz):
+            continue
+        for j, celda in enumerate(matriz[fila]):
+            if len(celda) >= 2:  # hay pareja
+                hijos = matriz[fila + 1][j] if j < len(matriz[fila + 1]) else []
+                if len(hijos) >= 2:
+                    nombres_pareja = f"{_full(celda[0])} y {_full(celda[1])}"
+                    resultados.append(nombres_pareja)
+    return resultados
+
+
+
+# =============================
+# 2) Primos de primer grado
+# =============================
+def primos_primer_grado(nombre: str) -> list[str]:
+    """
+    Primos de 1er grado de X = hijos de los hermanos de sus padres.
+    Funciona tanto si X está en fila 1 (sus primos también en fila 1)
+    como si X está en fila 3 (sus primos también en fila 3).
+    """
+    padres = list(padres_de_persona(nombre))   # set[str] → list
+    if not padres:
+        return []
+
+    t_nombre = _norm(nombre)
+    t_vistos = set([t_nombre])
+    primos = set()
+
+    # Para cada padre/madre, tomar sus hermanos
+    for p in padres:
+        for tio_tia in hermanos_de(p):
+            # Hijos del tío/tía = primos de X
+            for h in hijos_de_persona(tio_tia):
+                if _norm(h) not in t_vistos:
+                    primos.add(h)
+                    t_vistos.add(_norm(h))
+
+    # Orden alfabético “bonito”
+    return sorted(primos, key=lambda s: s.split()[-1] + " " + s.split()[0])
+
+
+# =============================
+# 3) Antepasados maternos
+# =============================
+def antepasados_maternos(nombre: str) -> list[str]:
+    """
+    Cadena materna: madre → abuela materna → bisabuela materna → ...
+    Se basa en 'genero' del dict persona (busca 'fem' en minúsculas).
+    """
+    cadena = []
+    cur = nombre
+    t_vistos = set()
+
+    while True:
+        padres = list(padres_de_persona(cur))
+        if not padres:
+            break
+
+        madre = None
+        for p in padres:
+            d = _lookup_person(p)
+            if d and "fem" in (d.get("genero") or "").lower():
+                madre = _full(d)
+                break
+
+        if not madre:
+            break
+
+        t = _norm(madre)
+        if t in t_vistos:
+            break  # por seguridad ante ciclos
+        t_vistos.add(t)
+
+        cadena.append(madre)
+        cur = madre
+
+    return cadena
+
+
+# =============================
+# 4) Descendientes vivos (recursivo/BFS)
+# =============================
+def descendientes_vivos(nombre: str) -> list[str]:
+    """
+    Todos los descendientes (hijos, nietos, etc.) que estén vivos actualmente
+    (fecha_defuncion vacía). Recorre en anchura.
+    """
+    from collections import deque
+
+    vivos = set()
+    visit = set()
+    q = deque()
+
+    # arrancar con los hijos directos
+    for h in hijos_de_persona(nombre):
+        q.append(h)
+
+    while q:
+        person = q.popleft()
+        t = _norm(person)
+        if t in visit:
+            continue
+        visit.add(t)
+
+        d = _lookup_person(person)
+        # agregar si está vivo (fecha_defuncion vacía o falsy)
+        if d and not (d.get("fecha_defuncion") or "").strip():
+            vivos.add(_full(d))
+
+        # en cualquier caso, seguir bajando a sus hijos
+        for hh in hijos_de_persona(person):
+            if _norm(hh) not in visit:
+                q.append(hh)
+
+    # Orden alfabético simple
+    return sorted(vivos, key=lambda s: s.split()[-1] + " " + s.split()[0])
+
+
+
+
+
+
 
 # -----------------------------
 # Reglas de relación

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import json
 import unicodedata
 import os
+import re
 from services import db, buscador
 
 app = Flask(__name__)
@@ -262,11 +263,13 @@ with open(DATA_PATH, "r", encoding="utf-8") as f:
 
 
 def normalize_text(text: str) -> str:
-    """Convierte texto a minúsculas y elimina tildes."""
+    """Convierte texto a minúsculas, elimina tildes y signos raros."""
     text = text.lower()
     text = unicodedata.normalize("NFD", text)
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
-    return text
+    # quitar signos de puntuación y caracteres no alfanuméricos (excepto espacios)
+    text = re.sub(r"[^a-z0-9\s]", "", text)
+    return text.strip()
 
 
 
@@ -309,21 +312,56 @@ def chat():
         except Exception as e:
             reply = f"Error al procesar los nombres: {e}"
 
-    # ----- P2: primos -----
+     # -----------------------
+    # P2: Primos de X (sin helpers; basado en normalize_text)
     elif "primos" in user_msg:
-        nombre = user_msg.split()[-1].strip()
-        reply = f"Primos de {nombre}: función en desarrollo."
+        # Quitamos ruidos comunes para que el nombre quede limpio
+        texto = user_msg
+        texto = texto.replace("de primer grado", "").replace("primer grado", "")
+        # Extrae lo que venga después de "primos" o "primos de"
+        m = re.search(r"primos(?:\s+de)?\s+(?P<nombre>.+)$", texto)
+        if m:
+            nombre = m.group("nombre").strip().strip("?!.:,;").strip()
+        else:
+            nombre = user_msg.split()[-1].strip("?!.:,;")
+        lista = buscador.primos_primer_grado(nombre)
+        reply = f"Primos de primer grado de {nombre.title()}: {', '.join(lista) if lista else 'ninguno'}."
 
-    # ----- P3: antepasados maternos -----
+    # -----------------------
+    # P3: Antepasados maternos de X (sin helpers)
     elif "antepasados" in user_msg and "maternos" in user_msg:
-        nombre = user_msg.split()[-1].strip()
-        reply = f"Antepasados maternos de {nombre}: función en desarrollo."
+        m = re.search(r"\bantepasados\s+maternos(?:\s+de)?\s+(?P<nombre>.+)$", user_msg)
+        raw = m.group("nombre") if m else (user_msg.split()[-1] if user_msg.split() else "")
+        stop = {"de", "la", "el", "los", "las", "y", "del", "al", "persona", "personas"}
+        nombre_tokens = [t for t in raw.split() if t not in stop and not t.isdigit()]
+        nombre = " ".join(nombre_tokens).strip().title()
+        cadena = buscador.antepasados_maternos(nombre) if nombre else []
+        reply = f"Antepasados maternos de {nombre or '—'}: {', '.join(cadena) if cadena else 'ninguno'}."
 
-    # ----- P4: descendientes vivos -----
+    # -----------------------
     elif "descendientes" in user_msg and "vivos" in user_msg:
-        nombre = user_msg.split()[-2].strip()
-        vivos = db.descendientes_vivos(nombre, fam) if fam else []
-        reply = f"Descendientes vivos de {nombre}: {', '.join(vivos) or 'ninguno'}."
+    # Soporta: "descendientes de X vivos", "cuales descendientes de X estan vivos actualmente", etc.
+    # (trabajamos sobre user_msg ya normalizado)
+        m = re.search(
+            r"descendientes(?:\s+de)?\s+(?P<nombre>.+?)\s+(?:estan\s+)?vivos\b",
+            user_msg
+        )
+        if m:
+            nombre = m.group("nombre").strip()
+        else:
+            # Fallback: toma lo que sigue a "descendientes de" y limpia ruido al final
+            m2 = re.search(r"descendientes(?:\s+de)?\s+(?P<nombre>.+)$", user_msg)
+            nombre = (m2.group("nombre") if m2 else user_msg).strip()
+
+        # Quitar tokens de cierre *iterativamente* (no solo uno)
+        ruido_final = {"estan", "esta", "vivos", "actualmente", "ahora", "hoy"}
+        toks = [t for t in nombre.split() if t]
+        while toks and toks[-1] in ruido_final:
+            toks.pop()
+        nombre = " ".join(toks)
+
+        lista = buscador.descendientes_vivos(nombre)
+        reply = f"Descendientes vivos de {nombre.title()}: {', '.join(lista) if lista else 'ninguno'}."
 
     # ----- P5: nacidos últimos 10 años -----
     elif "ultimos 10 anos" in user_msg or "ultimos 10 años" in user_msg:
@@ -332,7 +370,8 @@ def chat():
 
     # ----- P6: parejas con 2+ hijos -----
     elif "parejas" in user_msg and "hijos" in user_msg:
-        reply = "Parejas con 2 o más hijos: función en desarrollo."
+        lista = buscador.parejas_con_mas_de_dos_hijos()
+        reply = f"Parejas con 2 o más hijos: {', '.join(lista) if lista else 'ninguna'}."
 
     # ----- P7: fallecidos <50 -----
     elif "fallecieron" in user_msg and "50" in user_msg:
@@ -345,6 +384,14 @@ def chat():
 
     return jsonify({"reply": reply})
 
+
+
+
+
+
+@app.route("/history")
+def history():
+    return render_template("history.html", **ctx())
 
 # ------------------ MAIN ------------------
 if __name__ == "__main__":
