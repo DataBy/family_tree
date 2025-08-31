@@ -269,14 +269,14 @@
                 <label class="w-[200px] md:w-[320px] text-[clamp(14px,2vh,24px)] font-medium">{{ label }}</label>
                 {% if tipo == 'select' %}
                 <select name="{{ name }}" 
-                        class="flex-1 max-w-[500px] p-[clamp(5px,1.6vh,10px)] rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                        class="flex-1 max-w-[500px] py-[clamp(4px,0.8vh,12px)] pl-[8px] pr-[8px] rounded-lg bg-gray-900/40 text-white focus:outline-none">
                   {% for opt in extra %}
                   <option class="text-black">{{ opt }}</option>
                   {% endfor %}
                 </select>
                 {% else %}
                 <input type="{{ tipo }}" name="{{ name }}" {% if tipo!='date' %}placeholder="{{ extra }}"{% endif %}
-                      class="flex-1 max-w-[500px] p-[clamp(8px,1.6vh,12px)] rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"/>
+                      class="flex-1 max-w-[500px] py-[clamp(4px,0.8vh,12px)] pl-[8px] pr-[8px] rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"/>
                 {% endif %}
               </div>
               {% endfor %}
