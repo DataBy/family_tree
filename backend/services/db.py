@@ -155,24 +155,24 @@ def _seed_familia_espinoza():
 
     # Nivel 1 (hijos: 3 por pareja)
     # Hijos de Edgardo + María (col 0)
-    p = _p_col(0, "Luis", "Espinoza Sanchez", "Masculino", "LE-1993-1001", "1993-02-15")
+    p = _p_col(0, "Luis", "Espinoza Sanchez", "Masculino", "LE-1993-1001", "1993-02-15", estado_civil="Casado")
     p["afinidades"] = ["música", "viajes", "cine", "cocina", "deporte"]  # pensada para encajar con Andrea (>=80%)
     agregar_persona(p, fam, 1, 0)
-    p = _p_col(0, "Fernanda", "Espinoza Sanchez", "Femenino", "FE-1995-1002", "1995-07-21")
+    p = _p_col(0, "Fernanda", "Espinoza Sanchez", "Femenino", "FE-1995-1002", "1995-07-21" , estado_civil="Casado")
     p["afinidades"] = ["música", "lectura", "arte", "viajes", "baile"]
     agregar_persona(p, fam, 1, 0)
-    p = _p_col(0, "Gabriel", "Espinoza Sanchez", "Masculino", "GE-1992-1003", "1992-12-03")
+    p = _p_col(0, "Gabriel", "Espinoza Sanchez", "Masculino", "GE-1992-1003", "1992-12-03", estado_civil="Casado")
     p["afinidades"] = ["deporte", "tecnología", "senderismo", "viajes", "fotografía"]
     agregar_persona(p, fam, 1, 0)
 
     # Hijos de Carlos + Daniela (col 1)
-    p = _p_col(1, "Andrea", "Rojas Lopez", "Femenino", "AR-1994-2001", "1994-04-09")
+    p = _p_col(1, "Andrea", "Rojas Lopez", "Femenino", "AR-1994-2001", "1994-04-09", estado_civil="Casado")
     p["afinidades"] = ["música", "viajes", "cine", "cocina", "lectura"]  # empata fuerte con Luis
     agregar_persona(p, fam, 1, 1)
-    p = _p_col(1, "Mateo", "Rojas Lopez", "Masculino", "MR-1991-2002", "1991-08-18")
+    p = _p_col(1, "Mateo", "Rojas Lopez", "Masculino", "MR-1991-2002", "1991-08-18", estado_civil="Casado")
     p["afinidades"] = ["deporte", "tecnología", "viajes", "cine", "fotografía"]
     agregar_persona(p, fam, 1, 1)
-    p = _p_col(1, "Sofía", "Rojas Lopez", "Femenino", "SR-1996-2003", "1996-10-27")
+    p = _p_col(1, "Sofía", "Rojas Lopez", "Femenino", "SR-1996-2003", "1996-10-27", estado_civil="Casado")
     p["afinidades"] = ["arte", "viajes", "fotografía", "yoga", "música"]
     agregar_persona(p, fam, 1, 1)
 
@@ -285,24 +285,24 @@ def _seed_familia_alvarez_mendez():
 
     # Nivel 1 (hijos: 3 por pareja)
     # Hijos de Jorge + Laura (col 0): apellidos Alvarez Mendez
-    p = _p_col(0, "Diego", "Alvarez Mendez", "Masculino", "DA-1994-1001", "1994-03-01")
+    p = _p_col(0, "Diego", "Alvarez Mendez", "Masculino", "DA-1994-1001", "1994-03-01", estado_civil="Casado")
     p["afinidades"] = ["deporte", "viajes", "música", "cine", "tecnología"]
     agregar_persona(p, fam, 1, 0)
-    p = _p_col(0, "Isabel", "Alvarez Mendez", "Femenino", "IA-1996-1002", "1996-08-12")
+    p = _p_col(0, "Isabel", "Alvarez Mendez", "Femenino", "IA-1996-1002", "1996-08-12", estado_civil="Casado")
     p["afinidades"] = ["lectura", "arte", "viajes", "cocina", "música"]
     agregar_persona(p, fam, 1, 0)
-    p = _p_col(0, "Sebastian", "Alvarez Mendez", "Masculino", "SA-1992-1003", "1992-12-20")
+    p = _p_col(0, "Sebastian", "Alvarez Mendez", "Masculino", "SA-1992-1003", "1992-12-20", estado_civil="Casado")
     p["afinidades"] = ["tecnología", "deporte", "viajes", "cine", "fotografía"]
     agregar_persona(p, fam, 1, 0)
 
     # Hijos de Hector + Patricia (col 1): apellidos Vargas Quesada
-    p = _p_col(1, "Paula", "Vargas Quesada", "Femenino", "PV-1995-2001", "1995-06-18")
+    p = _p_col(1, "Paula", "Vargas Quesada", "Femenino", "PV-1995-2001", "1995-06-18", estado_civil="Casado")
     p["afinidades"] = ["deporte", "viajes", "música", "cine", "tecnología"]  # empareja con Diego
     agregar_persona(p, fam, 1, 1)
-    p = _p_col(1, "Andres", "Vargas Quesada", "Masculino", "AV-1991-2002", "1991-10-05")
+    p = _p_col(1, "Andres", "Vargas Quesada", "Masculino", "AV-1991-2002", "1991-10-05", estado_civil="Casado")
     p["afinidades"] = ["deporte", "tecnología", "viajes", "cine", "fotografía"]
     agregar_persona(p, fam, 1, 1)
-    p = _p_col(1, "Valeria", "Vargas Quesada", "Femenino", "VV-1997-2003", "1997-01-27")
+    p = _p_col(1, "Valeria", "Vargas Quesada", "Femenino", "VV-1997-2003", "1997-01-27", estado_civil="Casado")
     p["afinidades"] = ["viajes", "cine", "fotografía", "arte", "música"]
     agregar_persona(p, fam, 1, 1)
 

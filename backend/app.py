@@ -226,6 +226,8 @@ def tree():
                         f"Edad: {edad_txt}<br>"
                         f"Nac: {p.get('fecha_nacimiento','—')}"
                         + (f"<br>Fallec: {p['fecha_defuncion']}" if fallecido else "")
+                        + (f"<br>Provincia: {p.get('residencia','—')}" if p.get("residencia") else "")
+                        + (f"<br>Estado civil: {p.get('estado_civil','—')}" if p.get("estado_civil") else "")
                     )
 
                     # Si tiene tutores legales, los añadimos
