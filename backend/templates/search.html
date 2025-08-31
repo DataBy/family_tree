@@ -130,7 +130,7 @@
         </nav>
       </div>
 
-      <!-- Cuadro de fecha -->
+      <!-- Cuadro de fecha (alineado al fondo del sidebar; sin mt ni mb) -->
       <div class="glassy text-white
                   w-[200px] md:w-[230px] xl:w-[250px]
                   h-[clamp(210px,25vh,281px)]
@@ -141,18 +141,37 @@
                   rounded-[12px] xl:rounded-[15px]">
         <div class="flex items-center mb-[clamp(24px,3.6vh,53px)]">
           <span class="material-icons text-[clamp(28px,3.4vh,40px)] text-[#7C95FF]">calendar_today</span>
-          <p class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">17</p>
+          <p id="reloj-dia" class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">17</p>
         </div>
         <div class="flex items-center mb-[clamp(24px,3.6vh,53px)]">
           <span class="material-icons text-[clamp(28px,3.4vh,40px)] text-[#9CCC65]">schedule</span>
-          <p class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">Agosto</p>
+          <p id="reloj-mes" class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">Agosto</p>
         </div>
         <div class="flex items-center">
           <span class="material-icons text-[clamp(28px,3.4vh,40px)] text-[#FACF43]">wb_sunny</span>
-          <p class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">2025</p>
+          <p id="reloj-anio" class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">2025</p>
         </div>
       </div>
-    </aside>
+      </aside>
+
+      <script>
+        async function actualizarReloj() {
+          try {
+            const resp = await fetch("/api/time");
+            const data = await resp.json();
+
+            document.getElementById("reloj-dia").textContent = data.dia;
+            document.getElementById("reloj-mes").textContent = data.mes;
+            document.getElementById("reloj-anio").textContent = data.anio;
+          } catch (e) {
+            console.error("Error al actualizar reloj:", e);
+          }
+        }
+
+        // Actualizar cada 2 segundos
+        setInterval(actualizarReloj, 2000);
+        actualizarReloj();
+      </script>
 
     <!-- Contenido principal -->
     <main class="flex-1 min-w-0 flex flex-col p-6 pl-[72px] min-h-0">

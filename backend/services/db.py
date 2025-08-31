@@ -5,7 +5,7 @@
 #   cada celda = lista de personas (dicts)
 
 from typing import Dict, List, Tuple
-from datetime import datetime
+from datetime import datetime, date
 import unicodedata
 
 FamiliaMatriz = List[List[List[dict]]]
@@ -460,6 +460,14 @@ def _find_persona(familia: str, nombre_completo: str):
     return None, None
 
 def _edad(p: dict) -> int | None:
+    # Si hay 'edad' explícita (simulación), úsala.
+    if "edad" in p and isinstance(p["edad"], (int, float)):
+        try:
+            return int(p["edad"])
+        except Exception:
+            pass
+
+    # Si no, calcula por fecha de nacimiento vs hoy real
     try:
         y, m, d = map(int, (p.get("fecha_nacimiento") or "0000-01-01").split("-"))
         today = date.today()
@@ -480,8 +488,11 @@ def _esta_unido(m: FamiliaMatriz, pos: tuple[int,int,int]) -> bool:
     return False
 
 def _intereses(p: dict) -> set[str]:
-    """Lista opcional en el dict de persona. Si no existe, se toma vacío."""
-    vals = p.get("intereses") or []
+    """Soporta 'intereses' o 'afinidades' (según el seed)."""
+    vals = p.get("intereses")
+    if not vals:
+        vals = p.get("afinidades")  # << seed actual
+    vals = vals or []
     return { _norm_txt(x) for x in vals if isinstance(x, str) }
 
 def _afinidad_emocional(p1: dict, p2: dict) -> tuple[float, int]:

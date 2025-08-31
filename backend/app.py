@@ -1,12 +1,79 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, request
 import json
 import unicodedata
-import os
+import atexit, os
 import re
 from services import db, buscador
+from services import efecto
+from datetime import datetime, timedelta
+import random
+from services.gestor import GestorEventos
 
 app = Flask(__name__)
 app.secret_key = "supersecreto"  # Necesario para flash
+
+
+gestor: GestorEventos | None = None
+app.config["LAST_GESTOR_EVENTS"] = []
+app._gestor_started = False  # evita doble arranque con el reloader
+
+def _start_gestor_if_needed():
+    # En modo debug, Flask lanza un proceso padre y otro hijo; solo arrancamos en el hijo.
+    if app.debug and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        return
+    if getattr(app, "_gestor_started", False):
+        return
+
+    def on_cambios(eventos):
+        # Aquí no hay UI: logueamos y, si querés, el front puede hacer polling a /api/tree-elements
+        app.logger.info("Tick gestor: %s eventos", len(eventos))
+        app.config["LAST_GESTOR_EVENTS"] = eventos
+
+    global gestor
+    gestor = GestorEventos(
+        tick_seg=10,
+        anios_por_tick=1,
+        rng_seed=42,
+        on_change=on_cambios,
+        max_uniones_por_familia_por_tick=1,
+        prob_nacimiento_por_pareja_por_tick=0.05,
+    )
+    gestor.start()
+    app._gestor_started = True
+
+# Flask 3.x: usar before_serving. Si no existe (versiones viejas), caemos a before_request una sola vez.
+if hasattr(app, "before_serving"):
+    @app.before_serving
+    def _on_serving():
+        _start_gestor_if_needed()
+else:
+    _gestor_booted = {"done": False}
+    @app.before_request
+    def _on_first_request():
+        if not _gestor_booted["done"]:
+            _start_gestor_if_needed()
+            _gestor_booted["done"] = True
+
+# Parar el gestor al cerrar el servidor
+if hasattr(app, "after_serving"):
+    @app.after_serving
+    def _after_serving():
+        global gestor
+        if gestor:
+            try:
+                gestor.stop()
+            except Exception:
+                pass
+else:
+    @atexit.register
+    def _stop_gestor():
+        global gestor
+        if gestor:
+            try:
+                gestor.stop()
+            except Exception:
+                pass
+# --- fin simulador ---
 
 # Limpiar Cookies
 import uuid
@@ -153,6 +220,10 @@ def tree():
                         f"Nac: {p.get('fecha_nacimiento','—')}"
                         + (f"<br>Fallec: {p['fecha_defuncion']}" if fallecido else "")
                     )
+
+                    # Si tiene tutores legales, los añadimos
+                    if p.get("tutores_legales"):
+                        detalle += f"<br><i>Tutores:</i> {', '.join(p['tutores_legales'])}"
 
                     elements.append({
                         "data": {
@@ -660,10 +731,28 @@ def love():
 
         # 4) Afinidad emocional (≥ 2 coincidencias y ≥ 70%)
         score, matches = afinidad_score(pA, pB)
-        rules["afinidad_ok"] = bool(matches >= 2 and score >= 70)
-        rules["afinidad_detalle"] = f"{matches} coincidencias, {score}%"
+
+        # Puntos de amor base
+        love_points = 100
+
+        # ---- AJUSTES por viudez o soltería prolongada ----
+        if pA.get("estado_civil", "").lower().startswith("viud") or pB.get("estado_civil", "").lower().startswith("viud"):
+            love_points -= 20
+            reasons.append("Penalización: alguno es viudo, probabilidad menor de volver a unirse (-20).")
+
+        if pA.get("salud_emocional", 100) < 100 or pB.get("salud_emocional", 100) < 100:
+            love_points -= 10
+            reasons.append("Penalización: salud emocional reducida, esperanza de vida afectada (-10).")
+
+        # --------------------------------------------------
+
+        # Validación combinada
+        rules["afinidad_ok"] = bool(matches >= 2 and score >= 70 and love_points >= 50)
+        rules["afinidad_detalle"] = f"{matches} coincidencias, {score}% afinidad, {love_points} puntos de amor"
+
         if not rules["afinidad_ok"]:
-            reasons.append("Afinidad insuficiente (mínimo 2 coincidencias y 70%).")
+            reasons.append("Rechazado: se requieren ≥2 coincidencias, afinidad ≥70% y puntos de amor ≥50.")
+
 
         # 5) Compatibilidad genética
         g_ok, g_det = genetica_ok(pA, pB, matriz)
@@ -843,6 +932,69 @@ def love():
 
     flash("¡Pareja unida correctamente!")
     return redirect(url_for("love"))
+
+
+# Colaterales
+@app.route("/colaterales/procesar", methods=["POST"])
+def procesar_colaterales_endpoint():
+    fam = session.get("familia_activa")
+    if not fam or not db.existe_familia(fam):
+        return jsonify({"ok": False, "message": "Familia no activa"}), 400
+
+    matriz = db.obtener_matriz(fam)
+    efecto.procesar_colaterales(matriz)
+    return jsonify({"ok": True, "message": "Efectos colaterales aplicados"})
+
+
+
+# Fecha de arranque (naive, sin tz)
+GAME_TIME = {"date": datetime(2025, 1, 1)}
+
+# Configuración del reloj acelerado
+SECONDS_PER_DAY = 0.0274  # 10 / 365 ~0.0274 s por día
+MESES_ES = [
+    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+]
+
+@app.route("/api/time")
+def api_time():
+    """Devuelve {dia, mes, anio} del tiempo simulado.
+    - Avanza un día cada SECONDS_PER_DAY segundos reales.
+    - No mezcla datetime naive/aware.
+    - No mete texto extra que rompa el layout.
+    """
+    now = datetime.now()
+
+    # Guardamos el último tick en sesión como ISO string para evitar tz issues
+    start_iso = session.get("last_tick_iso")
+    if start_iso:
+        try:
+            start = datetime.fromisoformat(start_iso)
+        except Exception:
+            # Si hubiese basura en sesión, reseteamos elegante
+            start = now
+            session["last_tick_iso"] = now.isoformat()
+    else:
+        start = now
+        session["last_tick_iso"] = now.isoformat()
+
+    elapsed = (now - start).total_seconds()
+
+    # Consumimos los días completos transcurridos y dejamos el resto como "carry"
+    if elapsed >= SECONDS_PER_DAY:
+        dias_extra = int(elapsed // SECONDS_PER_DAY)
+        GAME_TIME["date"] += timedelta(days=dias_extra)
+        # Avanzamos el marcador exactamente la cantidad consumida (no a "now")
+        new_start = start + timedelta(seconds=dias_extra * SECONDS_PER_DAY)
+        session["last_tick_iso"] = new_start.isoformat()
+
+    fecha = GAME_TIME["date"]
+    return jsonify({
+        "dia":  fecha.day,
+        "mes":  MESES_ES[fecha.month - 1],
+        "anio": fecha.year,
+    })
 
 
 
