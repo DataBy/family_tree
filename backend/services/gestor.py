@@ -4,11 +4,18 @@ from __future__ import annotations
 from datetime import date
 import threading
 import random
-from typing import Callable, Optional, Dict, Any, List, Tuple
+from typing import Callable, Optional, Dict, Any, List
+import logging
+
+log = logging.getLogger(__name__)
 
 from . import db  # usa tu db.py (misma carpeta services)
 
 Cambio = Dict[str, Any]  # {"tipo": "cumple|fallecimiento|union|nacimiento", ...}
+
+# ===========================================================
+# Helpers generales
+# ===========================================================
 
 def _add_years_safe(d: date, years: int) -> date:
     """Suma años manejando 29/Feb."""
@@ -19,10 +26,15 @@ def _add_years_safe(d: date, years: int) -> date:
         return d.replace(month=2, day=28, year=d.year + years)
 
 def _personas_en_familia(nombre_familia: str):
+    """Itera personas válidas (descarta celdas vacías y registros incompletos)."""
     m = db.obtener_matriz(nombre_familia) or []
     for fila in m:
         for celda in fila:
             for p in celda:
+                if not p or not isinstance(p, dict):
+                    continue
+                if not (p.get("nombre") or p.get("apellidos")):
+                    continue
                 yield p
 
 def _vivas(personas):
@@ -31,7 +43,10 @@ def _vivas(personas):
             yield p
 
 def _nombre_completo(p: dict) -> str:
-    return p.get("nombre_completo") or f"{p.get('nombre','').strip()} {p.get('apellidos','').strip()}".strip()
+    return (
+        p.get("nombre_completo")
+        or f"{p.get('nombre','').strip()} {p.get('apellidos','').strip()}".strip()
+    )
 
 def _edad_simulada(p: dict, ref: date) -> Optional[int]:
     """Calcula edad por fecha_nacimiento vs ref si no hay 'edad'. Si hay 'edad', úsala."""
@@ -48,20 +63,24 @@ def _edad_simulada(p: dict, ref: date) -> Optional[int]:
         return None
 
 def _prob_muerte(edad: Optional[int]) -> float:
-    """Probabilidad simple, creciente con la edad (ajustable)."""
+    """Probabilidad simple, creciente con la edad (ajustable).
+    A partir de los 100 años la muerte es segura.
+    """
     if edad is None:
         return 0.001
     if edad < 1:
         return 0.001
     if edad < 40:
-        return 0.002
+        return 0.003
     if edad < 60:
         return 0.005
     if edad < 75:
         return 0.015
     if edad < 85:
         return 0.04
-    return 0.08
+    if edad < 100:
+        return 0.08
+    return 1.0  # Nadie vive más de 100 años
 
 def _primer_apellido(apellidos: str) -> str:
     return (apellidos or "").split()[0] if apellidos else ""
@@ -72,7 +91,22 @@ def _apellidos_hijo(padre: dict, madre: dict) -> str:
 def _genero_opuesto(g1: str, g2: str) -> bool:
     if not g1 or not g2:
         return False
-    return (g1.lower().startswith("f") and g2.lower().startswith("m")) or (g1.lower().startswith("m") and g2.lower().startswith("f"))
+    return (g1.lower().startswith("f") and g2.lower().startswith("m")) or (
+        g1.lower().startswith("m") and g2.lower().startswith("f")
+    )
+
+def _edad_por_fecha_iso(fecha_iso: str, ref: date) -> Optional[int]:
+    """Edad a partir de fecha ISO YYYY-MM-DD vs ref."""
+    try:
+        y, m, d = map(int, (fecha_iso or "0000-01-01").split("-"))
+        return ref.year - y - ((ref.month, ref.day) < (m, d))
+    except Exception:
+        return None
+
+
+# ===========================================================
+# Clase principal
+# ===========================================================
 
 class GestorEventos:
     """
@@ -82,6 +116,7 @@ class GestorEventos:
       - Uniones (parejas M/F) con compatibilidad suficiente.
       - Nacimientos en parejas: bebé va a fila (fila_pareja+1) y misma columna de la pareja; cédula autogenerada.
     """
+
     def __init__(
         self,
         tick_seg: int = 10,
@@ -101,8 +136,15 @@ class GestorEventos:
         self.max_uniones_por_familia_por_tick = max_uniones_por_familia_por_tick
         self.prob_nacimiento_por_pareja_por_tick = prob_nacimiento_por_pareja_por_tick
 
-        self.nombres_m = ["Carlos", "Luis", "Mateo", "Diego", "Gabriel", "Bruno", "Iker", "Tomás", "Daniel", "Lucas", "Nicolás"]
-        self.nombres_f = ["María", "Ana", "Sofía", "Valeria", "Emma", "Camila", "Lucía", "Sara", "Zoe", "Luna", "Mía"]
+        # Listas de nombres aleatorios
+        self.nombres_m = [
+            "Carlos","Luis","Mateo","Diego","Gabriel","Bruno",
+            "Iker","Tomás","Daniel","Lucas","Nicolás"
+        ]
+        self.nombres_f = [
+            "María","Ana","Sofía","Valeria","Emma","Camila",
+            "Lucía","Sara","Zoe","Luna","Mía"
+        ]
 
     # ---------------- Ciclo de vida ----------------
     def start(self):
@@ -134,19 +176,23 @@ class GestorEventos:
         finally:
             self._programar_siguiente_tick()
 
-    # ---------------- Lógica del tick ----------------
+    # ===========================================================
+    # Lógica principal del simulador
+    # ===========================================================
+
     def _tick(self) -> List[Cambio]:
         eventos: List[Cambio] = []
 
         # Avanza el "hoy" simulado
         self.hoy = _add_years_safe(self.hoy, self.anios_por_tick)
 
-        # 1) Cumpleaños/edad: TODAS las personas vivas incrementan +anios_por_tick
+        # ---------------------------------------------------
+        # 1) Cumpleaños
+        # ---------------------------------------------------
         for fam in db.listar_familias():
             for p in _vivas(_personas_en_familia(fam)):
                 e = _edad_simulada(p, self.hoy)
                 if e is None:
-                    # si no se pudo calcular, inicializa a 0 antes de sumar
                     p["edad"] = self.anios_por_tick
                 else:
                     p["edad"] = int(e) + self.anios_por_tick
@@ -158,139 +204,189 @@ class GestorEventos:
                     "nueva_edad": p["edad"],
                 })
 
-        # 2) Fallecimientos aleatorios (solo vivos)
+        # ---------------------------------------------------
+        # 2) Fallecimientos
+        # ---------------------------------------------------
+        from . import efecto  # asegúrate de importar arriba del archivo
+
         for fam in db.listar_familias():
+            matriz = db.obtener_matriz(fam) or []
             for p in _vivas(_personas_en_familia(fam)):
                 edad = _edad_simulada(p, self.hoy)
                 if self.rng.random() < _prob_muerte(edad):
+                    # Marcar fecha de defunción
                     p["fecha_defuncion"] = self.hoy.isoformat()
+
+                    # Propagar defunción a los hijos
+                    for fila in matriz:
+                        for celda in fila:
+                            for hijo in celda:
+                                if hijo.get("madre_cedula") == p.get("cedula"):
+                                    hijo["madre_defuncion"] = True
+                                if hijo.get("padre_cedula") == p.get("cedula"):
+                                    hijo["padre_defuncion"] = True
+
                     eventos.append({
                         "tipo": "fallecimiento",
                         "familia": fam,
-                        "cedula": p.get("cedula",""),
+                        "cedula": p.get("cedula", ""),
                         "nombre": _nombre_completo(p),
                         "fecha": self.hoy.isoformat(),
                     })
 
-        # 3) Uniones por familia (M/F, compatibilidad suficiente)
-        for fam in db.listar_familias():
-            uniones_hechas = 0
-            if uniones_hechas >= self.max_uniones_por_familia_por_tick:
-                continue
+            # Después de procesar muertes en esta familia → aplicar efectos colaterales
+            efecto.procesar_colaterales(matriz)
 
-            vivos = [p for p in _vivas(_personas_en_familia(fam))]
-            solteros_m = [p for p in vivos if (p.get("estado_civil","Soltero") != "Casado") and str(p.get("genero","")).lower().startswith("m")]
-            solteros_f = [p for p in vivos if (p.get("estado_civil","Soltero") != "Casado") and str(p.get("genero","")).lower().startswith("f")]
 
-            # Baraja para aleatoriedad
-            self.rng.shuffle(solteros_m)
-            self.rng.shuffle(solteros_f)
+        # ---------------------------------------------------
+        # 3) Nacimientos automáticos (solo parejas existentes en fila 2)
+        #     - Usa probabilidad self.prob_nacimiento_por_pareja_por_tick
+        #     - Máximo 2 nacimientos extra por pareja (por tick)
+        # ---------------------------------------------------
+        eventos.extend(self._auto_nacimientos_tick(max_bebes_por_pareja=2))
 
-            intentos = 0
-            max_intentos = 8  # evita loops largos
-            while uniones_hechas < self.max_uniones_por_familia_por_tick and solteros_m and solteros_f and intentos < max_intentos:
-                intentos += 1
-                m = solteros_m[0]
-                f = solteros_f[0]
-
-                # Compatibilidad usando tu validador
-                ok, score, reasons = db.validar_union(fam, _nombre_completo(m), _nombre_completo(f))
-                if ok:
-                    ok2, msg = db.unir_pareja(fam, _nombre_completo(m), _nombre_completo(f))
-                    if ok2:
-                        m["estado_civil"] = "Casado"
-                        f["estado_civil"] = "Casado"
-                        eventos.append({
-                            "tipo": "union",
-                            "familia": fam,
-                            "pareja": [_nombre_completo(m), _nombre_completo(f)],
-                            "compatibilidad": int(round(score)),
-                            "mensaje": msg,
-                        })
-                        uniones_hechas += 1
-                        solteros_m.pop(0)
-                        solteros_f.pop(0)
-                    else:
-                        # no se pudo ubicar la celda, descarta este pareo
-                        solteros_m.pop(0)
-                        solteros_f.pop(0)
-                else:
-                    # intenta con otras combinaciones simples
-                    self.rng.shuffle(solteros_m)
-                    self.rng.shuffle(solteros_f)
-
-        # 4) Nacimientos (por parejas en fila 2)
-        for fam in db.listar_familias():
-            matriz = db.obtener_matriz(fam) or []
-            if len(matriz) <= 2:
-                continue  # no hay fila de parejas
-            fila_parejas = matriz[2]
-            for col_idx, celda in enumerate(fila_parejas):
-                if len(celda) < 2:
-                    continue
-                pa, pb = celda[0], celda[1]
-                # Ambos vivos
-                if pa.get("fecha_defuncion") or pb.get("fecha_defuncion"):
-                    continue
-                # Identificar madre/padre por genero
-                if str(pa.get("genero","")).lower().startswith("f"):
-                    madre, padre = pa, pb
-                else:
-                    madre, padre = pb, pa
-                # Rango fértil de la madre 18-45 (por edad simulada)
-                edad_madre = _edad_simulada(madre, self.hoy)
-                if edad_madre is None or not (18 <= edad_madre <= 45):
-                    continue
-                # Probabilidad de nacimiento por tick
-                if self.rng.random() >= self.prob_nacimiento_por_pareja_por_tick:
-                    continue
-
-                # Generar bebé
-                genero_bebe = "Femenino" if self.rng.random() < 0.5 else "Masculino"
-                nombre_bebe = self.rng.choice(self.nombres_f if genero_bebe.startswith("F") else self.nombres_m)
-                apellidos_bebe = _apellidos_hijo(padre, madre)
-
-                # Inserta en fila 3 (una debajo de parejas) y misma columna
-                fila_hijos = 3
-                p_bebe = db._p_col(
-                    col_idx,
-                    nombre_bebe,
-                    apellidos_bebe,
-                    genero_bebe,
-                    tag=f"SIM-{self.hoy.year}",
-                    fecha_nac=self.hoy.isoformat(),
-                    residencia=None,
-                    estado_civil="Soltero",
-                    fecha_def=""
-                )
-                # Enlaza padres
-                p_bebe["padre_cedula"] = padre.get("cedula","")
-                p_bebe["madre_cedula"] = madre.get("cedula","")
-                # Inicializa edad explícita en 0 (simulación)
-                p_bebe["edad"] = 0
-
-                db.agregar_persona(p_bebe, fam, fila_hijos, col_idx)
-                # Guarda relación de hijos en los padres (opcional)
-                padre.setdefault("hijos", []).append(p_bebe["cedula"])
-                madre.setdefault("hijos", []).append(p_bebe["cedula"])
-
-                eventos.append({
-                    "tipo": "nacimiento",
-                    "familia": fam,
-                    "columna": col_idx,
-                    "fila": fila_hijos,
-                    "nombre": f"{p_bebe['nombre']} {p_bebe['apellidos']}",
-                    "cedula": p_bebe["cedula"],
-                    "fecha": self.hoy.isoformat(),
-                    "padres": [_nombre_completo(padre), _nombre_completo(madre)],
-                })
-
-        # Notificar UI
+        # ---------------------------------------------------
+        # Notificación a la UI
+        # ---------------------------------------------------
         if self.on_change:
             try:
                 self.on_change(eventos)
             except Exception:
-                # El callback nunca debe romper el bucle de simulación
                 pass
+
+        return eventos
+
+    # ===========================================================
+    # Nacimientos automáticos (helpers)
+    # ===========================================================
+
+    def _parejas_validas_en_fila2(self, familia: str) -> List[Dict[str, Any]]:
+        """
+        Parejas 'fértiles' en fila 2:
+          - Celda con >=2 dicts (pareja)
+          - Ambos vivos
+          - Se identifica madre por genero y está 18..45 (edad simulada contra self.hoy)
+        """
+        m = db.obtener_matriz(familia) or []
+        out = []
+        if len(m) <= 2:
+            return out
+        for col_idx, celda in enumerate(m[2]):
+            if len(celda) < 2 or not all(isinstance(x, dict) for x in celda[:2]):
+                continue
+            pa, pb = celda[0], celda[1]
+            if pa.get("fecha_defuncion") or pb.get("fecha_defuncion"):
+                continue
+
+            # madre/padre por genero
+            gpa = (pa.get("genero") or "").lower()
+            gpb = (pb.get("genero") or "").lower()
+            if gpa.startswith("f"):
+                madre, padre = pa, pb
+            elif gpb.startswith("f"):
+                madre, padre = pb, pa
+            else:
+                continue  # no se pudo determinar madre
+
+            edad_madre = _edad_simulada(madre, self.hoy)
+            if edad_madre is None:
+                # fallback si no hay 'edad' simulada
+                edad_madre = _edad_por_fecha_iso(madre.get("fecha_nacimiento",""), self.hoy)
+            if edad_madre is None or not (18 <= edad_madre <= 45):
+                continue
+
+            out.append({
+                "familia": familia,
+                "col_idx": col_idx,
+                "madre": madre,
+                "padre": padre,
+            })
+        return out
+
+    def _crear_bebe_dict_local(self, hoy_iso: str, padre: dict, madre: dict) -> dict:
+        """Crea el bebé con banderas que tu renderer espera (nivel, tipo, mostrar_en_arbol)."""
+        genero = "Femenino" if self.rng.random() < 0.5 else "Masculino"
+        nombre = self.rng.choice(self.nombres_f if genero == "Femenino" else self.nombres_m)
+        ap1 = (padre.get("apellidos") or "").split()[0] if padre else ""
+        ap2 = (madre.get("apellidos") or "").split()[0] if madre else ""
+        apellidos = f"{ap1} {ap2}".strip()
+        provincia = padre.get("residencia") or madre.get("residencia") or "San José"
+        persona_key = (nombre, apellidos, hoy_iso)
+        cedula = db._cedula(provincia, int(hoy_iso[:4]), persona_key)
+        return {
+            "tipo": "persona",
+            "mostrar_en_arbol": True,
+            "nivel": 3,  # hijos en fila 3 según tu convención
+
+            "nombre": nombre,
+            "apellidos": apellidos,
+            "nombre_completo": f"{nombre} {apellidos}",
+            "cedula": cedula,
+            "fecha_nacimiento": hoy_iso,
+            "fecha_defuncion": "",
+            "genero": genero,
+            "residencia": provincia,
+            "estado_civil": "Soltero",
+            "afinidades": [],
+            "padre_cedula": padre.get("cedula",""),
+            "madre_cedula": madre.get("cedula",""),
+            "edad": 0,
+        }
+
+    def _auto_nacimientos_tick(self, max_bebes_por_pareja: int = 2) -> List[Cambio]:
+        """
+        Crea bebés en (3, col) únicamente para parejas existentes en (2, col),
+        con probabilidad self.prob_nacimiento_por_pareja_por_tick y
+        máximo `max_bebes_por_pareja` por pareja en este tick.
+        """
+        eventos: List[Cambio] = []
+        hoy_iso = self.hoy.isoformat()
+
+        for fam in db.listar_familias():
+            parejas = self._parejas_validas_en_fila2(fam)
+            if not parejas:
+                continue
+
+            # Si querés solo una pareja random por familia, descomenta esta línea:
+            # parejas = [self.rng.choice(parejas)]
+
+            for pareja in parejas:
+                col_idx = pareja["col_idx"]
+                padre = pareja["padre"]
+                madre = pareja["madre"]
+
+                bebes_creados = 0
+                intentos = 0
+                max_intentos = max(1, max_bebes_por_pareja * 3)  # evita bucles si prob es baja
+
+                while bebes_creados < max_bebes_por_pareja and intentos < max_intentos:
+                    intentos += 1
+                    if self.rng.random() >= self.prob_nacimiento_por_pareja_por_tick:
+                        continue  # este intento no nace
+
+                    bebe = self._crear_bebe_dict_local(hoy_iso, padre, madre)
+
+                    # Insertar en fila 3, misma columna
+                    db.agregar_persona(bebe, fam, 3, col_idx)
+
+                    # Registrar en padres
+                    padre.setdefault("hijos", []).append(bebe["cedula"])
+                    madre.setdefault("hijos", []).append(bebe["cedula"])
+
+                    # Evento para UI
+                    eventos.append({
+                        "tipo": "nacimiento",
+                        "familia": fam,
+                        "columna": col_idx,
+                        "fila": 3,
+                        "nombre": bebe["nombre_completo"],
+                        "cedula": bebe["cedula"],
+                        "fecha": hoy_iso,
+                        "padres": [
+                            _nombre_completo(padre),
+                            _nombre_completo(madre),
+                        ],
+                    })
+                    bebes_creados += 1
 
         return eventos

@@ -8,6 +8,7 @@ from services import efecto
 from datetime import datetime, timedelta
 import random
 from services.gestor import GestorEventos
+from services.efecto import edad_actual
 
 app = Flask(__name__)
 app.secret_key = "supersecreto"  # Necesario para flash
@@ -36,7 +37,7 @@ def _start_gestor_if_needed():
         rng_seed=42,
         on_change=on_cambios,
         max_uniones_por_familia_por_tick=1,
-        prob_nacimiento_por_pareja_por_tick=0.05,
+        prob_nacimiento_por_pareja_por_tick=0.005,
     )
     gestor.start()
     app._gestor_started = True
@@ -214,9 +215,15 @@ def tree():
                     x0, y0 = base_pos(r, c)
                     offset = (i - (n - 1) / 2) * SLOT
                     fallecido = bool((p.get("fecha_defuncion") or "").strip())
+                    # ---- Edad actual (del gestor o recalculada) ----
+                    edad_txt = p.get("edad")
+                    if edad_txt is None:
+                        edad_txt = edad_actual(p)
+                    edad_txt = str(edad_txt) if edad_txt is not None else "—"
                     detalle = (
                         f"<b>{p.get('nombre','')} {p.get('apellidos','')}</b><br>"
                         f"Cédula: {p.get('cedula','—')}<br>"
+                        f"Edad: {edad_txt}<br>"
                         f"Nac: {p.get('fecha_nacimiento','—')}"
                         + (f"<br>Fallec: {p['fecha_defuncion']}" if fallecido else "")
                     )
@@ -237,7 +244,9 @@ def tree():
                         "position": {"x": x0 + offset, "y": y0}
                     })
 
-        # --- 2) Uniones matrimoniales centradas + edges ---
+                # --- 2) Uniones matrimoniales centradas + edges ---
+        seen_unions = set()  # evitar duplicados
+
         for r, fila in enumerate(matriz or []):
             if not is_couple_row(r):
                 continue
@@ -246,13 +255,25 @@ def tree():
                 # parejas por pares consecutivos [0,1], [2,3], ...
                 pairs = [(k, k + 1) for k in range(0, len(celda) - 1, 2)]
                 for pair_idx, (iA, iB) in enumerate(pairs):
-                    # Resolver cada posición a su node_id real (deduplicado)
                     idA = pos_to_node.get(f"{r}-{c}-{iA}")
                     idB = pos_to_node.get(f"{r}-{c}-{iB}")
                     if not idA or not idB:
                         continue
 
-                    # Nodo "unión" centrado (punto del que cuelgan hijos)
+                    pA, pB = celda[iA], celda[iB]
+
+                    # 1) Ambos deben estar casados
+                    if pA.get("estado_civil") != "Casado" or pB.get("estado_civil") != "Casado":
+                        continue
+
+                    # 2) Evitar uniones duplicadas (misma pareja en otra fila/columna)
+                    cedA, cedB = (pA.get("cedula") or "").strip(), (pB.get("cedula") or "").strip()
+                    union_key = tuple(sorted([cedA, cedB]))
+                    if union_key in seen_unions:
+                        continue
+                    seen_unions.add(union_key)
+
+                    # Crear nodo unión centrado
                     x0, y0 = base_pos(r, c)
                     union_id = f"u-{r}-{c}-{pair_idx}"
                     elements.append({
@@ -260,7 +281,7 @@ def tree():
                         "position": {"x": x0, "y": y0 + 12}
                     })
 
-                    # Matrimonio: dos segmentos hacia el centro (unión)
+                    # Matrimonio: dos segmentos hacia el centro
                     elements.append({
                         "data": {"id": f"mA-{r}-{c}-{pair_idx}",
                                  "source": idA, "target": union_id, "etype": "marriage"}
@@ -280,6 +301,7 @@ def tree():
                                 "data": {"id": f"h-{union_id}-{child_node}",
                                          "source": union_id, "target": child_node, "etype": "child"}
                             })
+
 
         return elements
 
