@@ -66,6 +66,8 @@ def asignar_tutores(menor: Dict, posibles_tutores: List[Dict]) -> List[Dict]:
     return candidatos
 
 
+# Acá empieza Jarvis, acá se debe corregir la asignación de tutores.
+# La lógica de la etiqueta para que los muestre está en el endpoint de app.py 
 def aplicar_tutores_en_familia(matriz: list[list[list[Dict]]]) -> None:
     """
     Si ambos padres de un menor mueren, asigna el primer tutor vivo disponible
