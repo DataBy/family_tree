@@ -266,7 +266,7 @@
               {% for label,name,tipo,extra in CAMPOS %}
               <div class="flex flex-col md:flex-row md:items-center 
                           gap-[clamp(6px,1.4vh,16px)] md:gap-[clamp(24px,3vh,60px)]">
-                <label class="w-[200px] md:w-[240px] text-[clamp(14px,2vh,24px)] font-medium">{{ label }}</label>
+                <label class="w-[120px] md:w-[150px] text-[clamp(14px,2vh,24px)] font-medium">{{ label }}</label>
                 {% if tipo == 'select' %}
                 <select name="{{ name }}" 
                         class="flex-1 max-w-[500px] py-[clamp(4px,0.8vh,12px)] pl-[8px] pr-[8px] rounded-lg bg-gray-900/40 text-white focus:outline-none">
