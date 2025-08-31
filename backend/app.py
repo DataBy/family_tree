@@ -424,7 +424,7 @@ def chat():
         reply = f"Primos de primer grado de {nombre.title()}: {', '.join(lista) if lista else 'ninguno'}."
 
     # -----------------------
-    # P3: Antepasados maternos de X (sin helpers)
+    # P3: Antepasados maternos de X
     elif "antepasados" in user_msg and "maternos" in user_msg:
         m = re.search(r"\bantepasados\s+maternos(?:\s+de)?\s+(?P<nombre>.+)$", user_msg)
         raw = m.group("nombre") if m else (user_msg.split()[-1] if user_msg.split() else "")
