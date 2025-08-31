@@ -250,13 +250,13 @@
         {% endwith %}
 
         <!-- Cuadro glassy del formulario -->
-        <div class="glassy rounded-[15px] p-[clamp(12px,2vh,24px)] text-white w-full mx-auto relative z-0">
+        <div class="glassy rounded-[15px] p-[clamp(10px,1.8vh,20px)] text-white w-full mx-auto relative z-0">
 
           <form method="POST" action="{{ url_for('personas') }}" 
-                class="flex flex-col xl:flex-row gap-[clamp(12px,2vh,24px)] relative z-10">
+                class="flex flex-col xl:flex-row gap-[clamp(10px,1.8vh,20px)] relative z-10">
 
             <!-- Columna izquierda -->
-            <div class="flex flex-col flex-1 gap-[clamp(12px,2vh,24px)]">
+            <div class="flex flex-col flex-1 gap-[clamp(10px,1.8vh,20px)] overflow-y-auto">
               {% set CAMPOS = [
                 ('Nombre','nombre','text','Ingrese el nombre'),
                 ('Apellidos','apellidos','text','Ingrese los apellidos'),
@@ -271,29 +271,30 @@
               ] %}
               {% for label,name,tipo,extra in CAMPOS %}
               <div class="flex flex-col md:flex-row md:items-center 
-                          gap-[clamp(8px,1.8vh,20px)] md:gap-[clamp(40px,5vh,91px)]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(16px,2.4vh,30px)] font-medium">{{ label }}</label>
+                          gap-[clamp(6px,1.4vh,16px)] md:gap-[clamp(24px,3vh,60px)]">
+                <label class="w-[200px] md:w-[320px] text-[clamp(14px,2vh,24px)] font-medium">{{ label }}</label>
                 {% if tipo == 'select' %}
-                <select name="{{ name }}" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                <select name="{{ name }}" 
+                        class="flex-1 max-w-[500px] p-[clamp(8px,1.6vh,12px)] rounded-lg bg-gray-900/40 text-white focus:outline-none">
                   {% for opt in extra %}
                   <option class="text-black">{{ opt }}</option>
                   {% endfor %}
                 </select>
                 {% else %}
                 <input type="{{ tipo }}" name="{{ name }}" {% if tipo!='date' %}placeholder="{{ extra }}"{% endif %}
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"/>
+                      class="flex-1 max-w-[500px] p-[clamp(8px,1.6vh,12px)] rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"/>
                 {% endif %}
               </div>
               {% endfor %}
             </div>
 
             <!-- Columna derecha -->
-            <div class="flex flex-col gap-[clamp(12px,2vh,24px)] items-start w-full xl:w-[300px]">
+            <div class="flex flex-col gap-[clamp(10px,1.8vh,20px)] items-start w-full xl:w-[300px]">
               <!-- Nota -->
-              <div class="glassy rounded-lg flex flex-col gap-[clamp(8px,1.8vh,20px)] self-start 
-                          p-[clamp(12px,2vh,24px)] text-[15px] w-full">
-                <div class="flex items-center gap-2 text-gray-200 text-[clamp(16px,2.4vh,30px)]">
-                  <span class="material-icons text-yellow-400 text-[clamp(20px,2.8vh,30px)]">warning</span>
+              <div class="glassy rounded-lg flex flex-col gap-[clamp(6px,1.4vh,16px)] self-start 
+                          p-[clamp(10px,1.8vh,18px)] text-[15px] w-full">
+                <div class="flex items-center gap-2 text-gray-200 text-[clamp(14px,2vh,22px)]">
+                  <span class="material-icons text-yellow-400 text-[clamp(18px,2.4vh,28px)]">warning</span>
                   <span class="font-bold">Nota:</span>
                 </div>
                 <p class="text-gray-200 text-justify leading-relaxed">
@@ -305,15 +306,15 @@
               </div>
 
               <!-- Afinidades -->
-              <div class="glassy rounded-lg p-[clamp(8px,1.8vh,20px)] w-full text-base">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="material-icons text-pink-300 text-[20px]">favorite</span>
-                  <h3 class="text-[clamp(16px,2.4vh,20px)] font-semibold">Afinidades</h3>
+              <div class="glassy rounded-lg p-[clamp(8px,1.6vh,14px)] w-full text-base">
+                <div class="flex items-center gap-2 mb-[clamp(6px,1.4vh,12px)]">
+                  <span class="material-icons text-pink-300 text-[18px]">favorite</span>
+                  <h3 class="text-[clamp(14px,2vh,20px)] font-semibold">Afinidades</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   {% set AFINIDADES = ['música','lectura','viajes','deporte','cine','arte','tecnología','fotografía'] %}
                   {% for it in AFINIDADES %}
-                  <label class="flex items-center gap-3 px-3 py-2 rounded bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer">
+                  <label class="flex items-center gap-2 px-2 py-2 rounded bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer">
                     <input type="checkbox" name="afinidades" value="{{ it }}" class="w-4 h-4 accent-emerald-400">
                     <span class="select-none text-sm">{{ it|capitalize }}</span>
                   </label>
@@ -322,19 +323,18 @@
               </div>
 
               <!-- Botones -->
-              <div class="flex flex-row gap-4 w-full mt-[65px]">
+              <div class="flex flex-row gap-3 w-full mt-[clamp(12px,2vh,20px)]">
                 <button type="submit"
-                        class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#01C38E] hover:bg-[#037153] transition">
+                        class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white text-base flex-1 bg-[#01C38E] hover:bg-[#037153] transition">
                   <span class="material-icons">check_circle</span> Añadir
                 </button>
                 <button type="reset"
-                        class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#DE8165] hover:bg-red-700 transition">
+                        class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white text-base flex-1 bg-[#DE8165] hover:bg-red-700 transition">
                   <span class="material-icons">cancel</span> Cancelar
                 </button>
               </div>
             </div>
           </form>
-
         </div>
       </div>
     </main>
