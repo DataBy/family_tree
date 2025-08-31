@@ -250,114 +250,65 @@
         {% endwith %}
 
         <!-- Cuadro glassy del formulario -->
-        <div class="glassy rounded-[15px] p-6 md:p-10 text-white w-full mx-auto relative z-0">
+        <div class="glassy rounded-[15px] p-[clamp(12px,2vh,24px)] text-white w-full mx-auto relative z-0">
 
-          <form method="POST" action="{{ url_for('personas') }}" class="flex flex-col xl:flex-row gap-10 relative z-10">
+          <form method="POST" action="{{ url_for('personas') }}" 
+                class="flex flex-col xl:flex-row gap-[clamp(12px,2vh,24px)] relative z-10">
 
-            <!-- Columna izquierda: Campos -->
-            <div class="flex flex-col flex-1 gap-6">
-              <!-- Nombre -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Nombre</label>
-                <input type="text" name="nombre" required
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                       placeholder="Ingrese el nombre" />
-              </div>
-              <!-- Apellidos -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Apellidos</label>
-                <input type="text" name="apellidos" required
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                       placeholder="Ingrese los apellidos" />
-              </div>
-              <!-- Cédula -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Cédula</label>
-                <input type="text" name="cedula"
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                       placeholder="Digite la cédula" />
-              </div>
-              <!-- Fecha nacimiento -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Fecha de nacimiento</label>
-                <input type="date" name="fecha_nacimiento"
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
-              </div>
-              <!-- Fecha defunción -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Fecha de defunción</label>
-                <input type="date" name="fecha_defuncion"
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
-              </div>
-              <!-- Género -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Género</label>
-                <select name="genero" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                  <option class="text-black">Masculino</option>
-                  <option class="text-black">Femenino</option>
-                  <option class="text-black">Otro</option>
+            <!-- Columna izquierda -->
+            <div class="flex flex-col flex-1 gap-[clamp(12px,2vh,24px)]">
+              {% set CAMPOS = [
+                ('Nombre','nombre','text','Ingrese el nombre'),
+                ('Apellidos','apellidos','text','Ingrese los apellidos'),
+                ('Cédula','cedula','text','Digite la cédula'),
+                ('Fecha de nacimiento','fecha_nacimiento','date',''),
+                ('Fecha de defunción','fecha_defuncion','date',''),
+                ('Género','genero','select',['Masculino','Femenino','Otro']),
+                ('Lugar de residencia','residencia','select',['San José','Alajuela','Cartago','Heredia','Guanacaste','Puntarenas','Limón']),
+                ('Estado Civil','estado_civil','select',['Soltero','Casado','Divorciado','Viudo']),
+                ('Nivel generacional','nivel','number','Ej: 0, 1, 2...'),
+                ('Número de sub-familia','subfamilia','number','Ej: 0, 1, 2...')
+              ] %}
+              {% for label,name,tipo,extra in CAMPOS %}
+              <div class="flex flex-col md:flex-row md:items-center 
+                          gap-[clamp(8px,1.8vh,20px)] md:gap-[clamp(40px,5vh,91px)]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(16px,2.4vh,30px)] font-medium">{{ label }}</label>
+                {% if tipo == 'select' %}
+                <select name="{{ name }}" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                  {% for opt in extra %}
+                  <option class="text-black">{{ opt }}</option>
+                  {% endfor %}
                 </select>
+                {% else %}
+                <input type="{{ tipo }}" name="{{ name }}" {% if tipo!='date' %}placeholder="{{ extra }}"{% endif %}
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"/>
+                {% endif %}
               </div>
-              <!-- Lugar de residencia -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Lugar de residencia</label>
-                <select name="residencia" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                  <option class="text-black">San José</option>
-                  <option class="text-black">Alajuela</option>
-                  <option class="text-black">Cartago</option>
-                  <option class="text-black">Heredia</option>
-                  <option class="text-black">Guanacaste</option>
-                  <option class="text-black">Puntarenas</option>
-                  <option class="text-black">Limón</option>
-                </select>
-              </div>
-              <!-- Estado civil -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Estado Civil</label>
-                <select name="estado_civil" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                  <option class="text-black">Soltero</option>
-                  <option class="text-black">Casado</option>
-                  <option class="text-black">Divorciado</option>
-                  <option class="text-black">Viudo</option>
-                </select>
-              </div>
-              <!-- Nivel generacional -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Nivel generacional</label>
-                <input type="number" name="nivel" required
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                       placeholder="Ej: 0, 1, 2..." />
-              </div>
-              <!-- Número de sub-familia -->
-              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
-                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Número de sub-familia</label>
-                <input type="number" name="subfamilia" required
-                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                       placeholder="Ej: 0, 1, 2..." />
-              </div>
+              {% endfor %}
             </div>
 
             <!-- Columna derecha -->
-            <div class="flex flex-col gap-6 items-start w-full xl:w-[300px]">
+            <div class="flex flex-col gap-[clamp(12px,2vh,24px)] items-start w-full xl:w-[300px]">
               <!-- Nota -->
-              <div class="glassy rounded-lg flex flex-col gap-4 self-start p-6 text-[15px] w-full">
-                <div class="flex items-center gap-2 text-gray-200 text-[clamp(18px,2.6vh,30px)]">
+              <div class="glassy rounded-lg flex flex-col gap-[clamp(8px,1.8vh,20px)] self-start 
+                          p-[clamp(12px,2vh,24px)] text-[15px] w-full">
+                <div class="flex items-center gap-2 text-gray-200 text-[clamp(16px,2.4vh,30px)]">
                   <span class="material-icons text-yellow-400 text-[clamp(20px,2.8vh,30px)]">warning</span>
                   <span class="font-bold">Nota:</span>
                 </div>
                 <p class="text-gray-200 text-justify leading-relaxed">
-                  <strong>Nivel generacional:</strong> indica la posición en el árbol familiar
-                  (abuelos, padres, hijos, nietos, etc).  
+                  <strong>Nivel generacional:</strong> indica la posición en el árbol familiar.
                   <br><br>
                   <strong>Número de sub-familia:</strong> se usa cuando un miembro de una
                   generación forma su propia familia aparte.
                 </p>
               </div>
+
               <!-- Afinidades -->
-              <div class="glassy rounded-lg p-4 w-full text-base">
+              <div class="glassy rounded-lg p-[clamp(8px,1.8vh,20px)] w-full text-base">
                 <div class="flex items-center gap-2 mb-2">
                   <span class="material-icons text-pink-300 text-[20px]">favorite</span>
-                  <h3 class="text-[18px] font-semibold">Afinidades</h3>
+                  <h3 class="text-[clamp(16px,2.4vh,20px)] font-semibold">Afinidades</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   {% set AFINIDADES = ['música','lectura','viajes','deporte','cine','arte','tecnología','fotografía'] %}
@@ -369,8 +320,9 @@
                   {% endfor %}
                 </div>
               </div>
+
               <!-- Botones -->
-              <div class="flex flex-row gap-4 w-full">
+              <div class="flex flex-row gap-4 w-full mt-[65px]">
                 <button type="submit"
                         class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#01C38E] hover:bg-[#037153] transition">
                   <span class="material-icons">check_circle</span> Añadir
