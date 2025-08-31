@@ -68,7 +68,8 @@ def asignar_tutores(menor: Dict, posibles_tutores: List[Dict]) -> List[Dict]:
 
 def aplicar_tutores_en_familia(matriz: list[list[list[Dict]]]) -> None:
     """
-    Si ambos padres de un menor mueren, asigna todos los posibles tutores en orden de prioridad.
+    Si ambos padres de un menor mueren, asigna el primer tutor vivo disponible
+    en orden de prioridad.
     """
     for fila in matriz:
         for celda in fila:
@@ -76,13 +77,26 @@ def aplicar_tutores_en_familia(matriz: list[list[list[Dict]]]) -> None:
                 if es_menor(p):
                     madre_viva = not bool(p.get("madre_defuncion"))
                     padre_vivo = not bool(p.get("padre_defuncion"))
+
+                    # Solo aplica si ambos padres están muertos
                     if not madre_viva and not padre_vivo:
                         # Todos los demás adultos de la familia menos el menor
                         posibles = [x for row in matriz for cell in row for x in cell if x != p]
-                        tutores = asignar_tutores(p, posibles)
-                        if tutores:
-                            # Guardamos la lista completa
-                            p["tutores_legales"] = [_full(t) for t in tutores]
+
+                        # Lista de tutores potenciales en orden de prioridad
+                        candidatos = asignar_tutores(p, posibles)
+
+                        tutor_asignado = None
+                        for t in candidatos:
+                            # Aquí podés definir bien qué significa "muerto" en tu estructura
+                            if not t.get("fecha_defuncion"):  # si no tiene fecha de defunción
+                                tutor_asignado = _full(t)
+                                break  # detenemos en el primero válido
+
+                        if tutor_asignado:
+                            p["tutores_legales"] = [tutor_asignado]
+                        else:
+                            p["tutores_legales"] = []  # sin tutor disponible
 
 
                             
