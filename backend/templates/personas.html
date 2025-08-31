@@ -7,167 +7,182 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Ink+Free&display=swap');
-
     .inkfree { font-family: 'Ink Free', cursive; }
 
-    /* Estilo base: para cuadros pequeños */
     .glassy {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     }
-
-    /* Estilo reforzado: para paneles grandes */
     .glassy-strong {
-    background: rgba(255, 255, 255, 0.08); /* un poquito más claro */
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    border-radius: 20px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4),
-                inset 0 0 15px rgba(255, 255, 255, 0.05); /* un glow interno */
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4),
+                  inset 0 0 15px rgba(255, 255, 255, 0.05);
     }
-
     .hover-zoom:hover {
       transform: scale(1.12);
       transition: transform 0.2s ease;
     }
-
-    body {
-      background: linear-gradient(135deg, #0B3037, #134E5E);
-    }
-
+    body { background: linear-gradient(135deg, #0B3037, #134E5E); }
     .material-icons { color: white; }
   </style>
 
-
-<!-- Hace que el mensaje de persona agregada desparezca luego de 3 segundos -->
-<script>
-  setTimeout(() => {
-    const msg = document.getElementById('toast-msg');
-    if (msg) {
-      msg.remove();
-    }
-  }, 3000);
-</script>
-
+  <!-- Hace que el mensaje de persona agregada desparezca luego de 3 segundos -->
+  <script>
+    setTimeout(() => {
+      const msg = document.getElementById('toast-msg');
+      if (msg) {
+        msg.remove();
+      }
+    }, 3000);
+  </script>
 </head>
-<body class="flex justify-center items-center h-screen w-screen overflow-hidden">
+<body class="flex justify-center items-center min-h-[100dvh] w-full overflow-hidden">
 
   <!-- Contenedor principal -->
-  <div class="w-[1920px] h-[1080px] flex">
+  <div class="flex w-full max-w-[1920px] h-[min(1080px,100dvh)]">
 
     <!-- Sidebar -->
-    <aside class="w-[300px] h-full flex flex-col justify-between py-9">
+    <aside class="h-full flex flex-col justify-between w-[240px] md:w-[270px] xl:w-[300px]
+                   pt-[clamp(16px,3vh,36px)] pb-[clamp(28px,4vh,53px)]">
 
       <!-- Superior -->
-      <div class="flex flex-col items-start ml-[72px]">
+      <div class="flex flex-col items-start ml-6 md:ml-12 xl:ml-[72px]">
         <!-- Logo -->
-        <img src="../static/images/logo.png" alt="Logo" class="w-[250px] h-[195px] mb-[47px] object-contain">
+        <img src="../static/images/logo.png" alt="Logo"
+             class="object-contain
+                    w-[180px] md:w-[220px] xl:w-[250px]
+                    h-[clamp(120px,18vh,195px)]
+                    mb-[clamp(24px,3.6vh,47px)]">
 
-               <!-- Botones con separación de 33px borde a borde -->
+        <!-- Botones -->
         <nav class="flex flex-col items-start">
-          <!-- Botón Inicio -->
-            <a href="{{ url_for('home') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
-            <span class="material-icons text-[35px]">home</span> Inicio
-            </a>
-          
-          <!-- Botón Personas (a) -->
-            <a href="{{ url_for('personas') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
-            <span class="material-icons text-[35px]">person</span> Personas
-            </a>
-
-          <!-- Botón Arbol -->
-            <a href="{{ url_for('tree') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
-            <span class="material-icons text-[35px]">account_tree</span> Árbol
-            </a>
-
-          <!-- Botón Buscar -->
-            <a href="{{ url_for('search') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
-            <span class="material-icons text-[35px]">search</span> Buscar
-            </a>
-
-          <!-- Botón Historial -->
-            <a href="{{ url_for('history') }}"
-            class="w-[250px] h-[60px] mb-[33px] bg-[#01C38E] text-white text-[30px] 
-                        flex items-center gap-x-3 px-4 rounded-[15px] hover:bg-[#037153] transition">
-            <span class="material-icons text-[35px]">history</span> Historial
-            </a>
+          <a href="{{ url_for('home') }}"
+             class="w-[200px] md:w-[230px] xl:w-[250px]
+                    h-[clamp(46px,5.6vh,60px)]
+                    mb-[clamp(18px,3vh,33px)]
+                    bg-[#01C38E] text-white
+                    text-[clamp(18px,2.6vh,30px)]
+                    flex items-center gap-x-2 md:gap-x-3 px-3 md:px-4
+                    rounded-[12px] md:rounded-[14px] xl:rounded-[15px]
+                    hover:bg-[#037153] transition">
+            <span class="material-icons text-[clamp(24px,3.2vh,35px)]">home</span> Inicio
+          </a>
+          <a href="{{ url_for('personas') }}"
+             class="w-[200px] md:w-[230px] xl:w-[250px]
+                    h-[clamp(46px,5.6vh,60px)]
+                    mb-[clamp(18px,3vh,33px)]
+                    bg-[#01C38E] text-white
+                    text-[clamp(18px,2.6vh,30px)]
+                    flex items-center gap-x-2 md:gap-x-3 px-3 md:px-4
+                    rounded-[12px] md:rounded-[14px] xl:rounded-[15px]
+                    hover:bg-[#037153] transition">
+            <span class="material-icons text-[clamp(24px,3.2vh,35px)]">person</span> Personas
+          </a>
+          <a href="{{ url_for('tree') }}"
+             class="w-[200px] md:w-[230px] xl:w-[250px]
+                    h-[clamp(46px,5.6vh,60px)]
+                    mb-[clamp(18px,3vh,33px)]
+                    bg-[#01C38E] text-white
+                    text-[clamp(18px,2.6vh,30px)]
+                    flex items-center gap-x-2 md:gap-x-3 px-3 md:px-4
+                    rounded-[12px] md:rounded-[14px] xl:rounded-[15px]
+                    hover:bg-[#037153] transition">
+            <span class="material-icons text-[clamp(24px,3.2vh,35px)]">account_tree</span> Árbol
+          </a>
+          <a href="{{ url_for('search') }}"
+             class="w-[200px] md:w-[230px] xl:w-[250px]
+                    h-[clamp(46px,5.6vh,60px)]
+                    mb-[clamp(18px,3vh,33px)]
+                    bg-[#01C38E] text-white
+                    text-[clamp(18px,2.6vh,30px)]
+                    flex items-center gap-x-2 md:gap-x-3 px-3 md:px-4
+                    rounded-[12px] md:rounded-[14px] xl:rounded-[15px]
+                    hover:bg-[#037153] transition">
+            <span class="material-icons text-[clamp(24px,3.2vh,35px)]">search</span> Buscar
+          </a>
+          <a href="{{ url_for('history') }}"
+             class="w-[200px] md:w-[230px] xl:w-[250px]
+                    h-[clamp(46px,5.6vh,60px)]
+                    mb-[clamp(18px,3vh,33px)]
+                    bg-[#01C38E] text-white
+                    text-[clamp(18px,2.6vh,30px)]
+                    flex items-center gap-x-2 md:gap-x-3 px-3 md:px-4
+                    rounded-[12px] md:rounded-[14px] xl:rounded-[15px]
+                    hover:bg-[#037153] transition">
+            <span class="material-icons text-[clamp(24px,3.2vh,35px)]">history</span> Historial
+          </a>
         </nav>
       </div>
 
-    <!-- Cuadro de fecha (alineado y con spacing correcto) -->
-        <div class="glassy w-[250px] h-[281px] mt-[0px] mb-[53px] ml-[72px] flex flex-col items-start px-4 pt-6 pb-6 rounded-[15px] text-white">
-            <div class="flex items-center mb-[53px]">
-                <span class="material-icons text-[40px] text-[#7C95FF]">calendar_today</span>
-                <p class="text-[30px] ml-[30px]">17</p>
-            </div>
-            <div class="flex items-center mb-[53px]">
-                <span class="material-icons text-[40px] text-[#9CCC65]">schedule</span>
-                <p class="text-[30px] ml-[30px]">Agosto</p>
-            </div>
-            <div class="flex items-center">
-                <span class="material-icons text-[40px] text-[#FACF43]">wb_sunny</span>
-                <p class="text-[30px] ml-[30px]">2025</p>
-            </div>
+      <!-- Cuadro de fecha -->
+      <div class="glassy text-white
+                  w-[200px] md:w-[230px] xl:w-[250px]
+                  h-[clamp(210px,25vh,281px)]
+                  ml-6 md:ml-12 xl:ml-[72px]
+                  mt-auto
+                  flex flex-col items-start
+                  px-3 md:px-4 pt-[clamp(14px,2.2vh,24px)] pb-[clamp(14px,2.2vh,24px)]
+                  rounded-[12px] xl:rounded-[15px]">
+        <div class="flex items-center mb-[clamp(24px,3.6vh,53px)]">
+          <span class="material-icons text-[clamp(28px,3.4vh,40px)] text-[#7C95FF]">calendar_today</span>
+          <p class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">17</p>
         </div>
+        <div class="flex items-center mb-[clamp(24px,3.6vh,53px)]">
+          <span class="material-icons text-[clamp(28px,3.4vh,40px)] text-[#9CCC65]">schedule</span>
+          <p class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">Agosto</p>
+        </div>
+        <div class="flex items-center">
+          <span class="material-icons text-[clamp(28px,3.4vh,40px)] text-[#FACF43]">wb_sunny</span>
+          <p class="text-[clamp(20px,2.6vh,30px)] ml-[clamp(14px,2.4vh,30px)]">2025</p>
+        </div>
+      </div>
     </aside>
 
     <!-- Contenido principal -->
-    <main class="flex-1 flex flex-col p-6 pl-[72px]">
+    <main class="flex-1 flex flex-col p-6 pl-[72px] min-h-0 pb-[clamp(28px,4vh,53px)]">
 
       <!-- Barra superior -->
-      <div class="flex justify-end items-center mb-6 gap-4 w-[1500px] mx-auto">
-
-
-
-
-        <!-- FAMILIA: botón + dropdown -->
-        <div x-data="{ open: false }" class="relative w-[529px] mr-[50px]">
-          <!-- Botón principal (muestra la familia activa) -->
+      <div class="flex justify-end items-center mb-6 gap-4 w-full max-w-[1500px] mx-auto shrink-0">
+        <div x-data="{ open: false }" class="relative w-full sm:w-[360px] md:w-[460px] xl:w-[529px] mr-0 xl:mr-[50px]">
           <div @click="open = !open"
-              class="w-full h-[60px] bg-[#01C38E] flex items-center justify-between px-4 rounded-[15px] text-white text-[28px] shadow-md cursor-pointer">
-            <div class="flex items-center gap-3">
-              <span class="material-icons text-[35px]">groups</span>
+               class="w-full h-[clamp(46px,5.6vh,60px)]
+                      bg-[#01C38E] flex items-center justify-between
+                      px-3 md:px-4 rounded-[12px] xl:rounded-[15px]
+                      text-white text-[clamp(18px,2.6vh,28px)]
+                      shadow-md cursor-pointer">
+            <div class="flex items-center gap-2 md:gap-3">
+              <span class="material-icons text-[clamp(24px,3.2vh,35px)]">groups</span>
               <span>Familia: {{ familia_activa or ' ' }}</span>
             </div>
-            <span class="material-icons text-[30px]">expand_more</span>
+            <span class="material-icons text-[clamp(20px,2.6vh,30px)]">expand_more</span>
           </div>
-
           <!-- Dropdown -->
           <div x-show="open" x-transition
-              @click.outside="open = false"
-              class="absolute mt-2 w-full bg-white rounded-[15px] shadow-lg p-4 z-50">
-
-            <!-- Crear familia -->
+               @click.outside="open = false"
+               class="absolute mt-2 w-full bg-white rounded-[12px] xl:rounded-[15px] shadow-lg p-3 md:p-4 z-50">
             <form method="POST" action="{{ url_for('crear_familia') }}" class="flex gap-2">
               <input type="text" name="nombre_familia" required
-                    placeholder="Nombre de la familia"
-                    class="flex-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#01C38E]" />
+                     placeholder="Nombre de la familia"
+                     class="flex-1 p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#01C38E]" />
               <button type="submit"
-                      class="px-4 py-2 bg-[#01C38E] text-white rounded-lg hover:bg-[#037153]">
+                      class="px-3 md:px-4 py-2 bg-[#01C38E] text-white rounded-lg hover:bg-[#037153]">
                 Añadir
               </button>
             </form>
-
-            <!-- Lista/selector de familias -->
-            <div class="mt-4">
+            <div class="mt-3 md:mt-4">
               {% if familias %}
                 <ul class="space-y-2">
                   {% for fam in familias %}
                     <li class="flex items-center justify-between py-2 px-3 rounded-lg
-                              {% if fam == familia_activa %} bg-emerald-50 {% else %} bg-gray-50 {% endif %}">
+                               {% if fam == familia_activa %} bg-emerald-50 {% else %} bg-gray-50 {% endif %}">
                       <div class="flex items-center gap-2">
-                        <span class="material-icons text-[22px]
+                        <span class="material-icons text-[clamp(18px,2.6vh,22px)]
                                     {% if fam == familia_activa %} text-[#01C38E] {% else %} text-gray-500 {% endif %}">
                           groups
                         </span>
@@ -176,18 +191,15 @@
                           <span class="ml-2 text-xs text-[#01C38E] font-semibold">(Activa)</span>
                         {% endif %}
                       </div>
-
-                      <!-- Switch para activar -->
                       <form method="POST" action="{{ url_for('seleccionar_familia') }}" class="m-0">
                         <input type="hidden" name="nombre_familia" value="{{ fam }}">
-                        <label class="relative inline-block w-12 h-6 align-middle">
+                        <label class="relative inline-block w-10 md:w-12 h-5 md:h-6 align-middle">
                           <input type="checkbox" class="sr-only peer"
-                                onchange="this.form.submit()"
-                                {% if fam == familia_activa %} checked {% endif %}>
-                          <span class="absolute inset-0 bg-gray-300 rounded-full transition
-                                      peer-checked:bg-[#01C38E]"></span>
-                          <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform
-                                      peer-checked:translate-x-6"></span>
+                                 onchange="this.form.submit()"
+                                 {% if fam == familia_activa %} checked {% endif %}>
+                          <span class="absolute inset-0 bg-gray-300 rounded-full transition peer-checked:bg-[#01C38E]"></span>
+                          <span class="absolute left-1 top-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-white rounded-full transition-transform
+                                       peer-checked:translate-x-5 md:peer-checked:translate-x-6"></span>
                         </label>
                       </form>
                     </li>
@@ -200,218 +212,178 @@
           </div>
         </div>
 
-        <!-- AlpineJS (si no lo tenés ya en la página) -->
+        <!-- AlpineJS -->
         <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
         <!-- Iconos configuración -->
-        <div class="w-[309px] h-[60px] flex items-center justify-around glassy rounded-[15px]">
-          <span class="material-icons text-[40px] hover-zoom">refresh</span>
-          
+        <div class="w-[220px] md:w-[260px] xl:w-[309px]
+                    h-[clamp(46px,5.6vh,60px)]
+                    flex items-center justify-around glassy
+                    rounded-[12px] xl:rounded-[15px]">
+          <span class="material-icons text-[clamp(28px,3.4vh,40px)] hover-zoom">refresh</span>
           <a href="{{ url_for('love') }}" class="cursor-pointer">
-            <span class="material-icons text-[40px] hover-zoom">favorite</span>
+            <span class="material-icons text-[clamp(28px,3.4vh,40px)] hover-zoom">favorite</span>
           </a>
-
-          <span class="material-icons text-[40px] hover-zoom">settings</span>
-          <span class="material-icons text-[40px] hover-zoom">logout</span>
+          <span class="material-icons text-[clamp(28px,3.4vh,40px)] hover-zoom">settings</span>
+          <span class="material-icons text-[clamp(28px,3.4vh,40px)] hover-zoom">logout</span>
         </div>
       </div>
 
+      <!-- Contenedor central -->
+      <div class="relative w-full max-w-[1500px] flex-1 glassy-strong rounded-[15px] flex flex-col mx-auto shadow-lg p-[clamp(16px,3vh,24px)]">
 
+        <!-- Título -->
+        <h2 class="text-[clamp(22px,2.8vh,30px)] ml-[10px] font-bold text-white mb-5">
+          Añadir Personas
+        </h2>
 
-
-
-
-
-
-<!-- Contenedor principal -->
-<div class="relativew-[1500px] h-[917px] glassy-strong rounded-[15px] flex flex-col mx-auto shadow-lg p-10">
-
-  <!-- Título -->
-  <h2 class="text-[30px] ml-[10px] font-bold text-white mb-5">
-    Añadir Personas
-  </h2>
-
-  <!-- Mensaje de persona añadida -->
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <div id="toast-msg"
-           class="fixed top-6 left-1/2 transform -translate-x-1/2
-                  p-4 rounded-lg text-white text-xl shadow-md z-50"
-           style="background-color: #01C38E;">
-        {{ messages[0] }}
-      </div>
-    {% endif %}
-  {% endwith %}
-
-  <!-- Cuadro glassy del formulario -->
-  <div class="glassy absolute rounded-[15px] p-10 text-white w-[1400px] h-auto mx-auto relative z-0">
-
-    <div class="flex flex-row gap-10 relative z-999">
-
-      <!-- Columna izquierda: Campos -->
-      <div class="flex flex-col flex-1 gap-6">
-
-        <form method="POST" action="{{ url_for('personas') }}" class="flex flex-row gap-10 relative z-10">
-
-          <!-- Columna izquierda: Campos -->
-          <div class="flex flex-col flex-1 gap-6">
-
-            <!-- Nombre -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Nombre</label>
-              <input type="text" name="nombre" required
-                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                     placeholder="Ingrese el nombre" />
+        <!-- Mensaje de persona añadida -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div id="toast-msg"
+                 class="fixed top-6 left-1/2 transform -translate-x-1/2
+                        p-4 rounded-lg text-white text-xl shadow-md z-50"
+                 style="background-color: #01C38E;">
+              {{ messages[0] }}
             </div>
+          {% endif %}
+        {% endwith %}
 
-            <!-- Apellidos -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Apellidos</label>
-              <input type="text" name="apellidos" required
-                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                     placeholder="Ingrese los apellidos" />
-            </div>
+        <!-- Cuadro glassy del formulario -->
+        <div class="glassy rounded-[15px] p-6 md:p-10 text-white w-full mx-auto relative z-0">
 
-            <!-- Cédula -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Cédula</label>
-              <input type="text" name="cedula"
-                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                     placeholder="Digite la cédula" />
-            </div>
+          <form method="POST" action="{{ url_for('personas') }}" class="flex flex-col xl:flex-row gap-10 relative z-10">
 
-            <!-- Fecha nacimiento -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Fecha de nacimiento</label>
-              <input type="date" name="fecha_nacimiento"
-                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
-            </div>
-
-            <!-- Fecha defunción -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Fecha de defunción</label>
-              <input type="date" name="fecha_defuncion"
-                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
-            </div>
-
-            <!-- Género -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Género</label>
-              <select name="genero" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                <option class="text-black">Masculino</option>
-                <option class="text-black">Femenino</option>
-                <option class="text-black">Otro</option>
-              </select>
-            </div>
-
-            <!-- Lugar de residencia -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Lugar de residencia</label>
-              <select name="residencia" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                <option class="text-black">San José</option>
-                <option class="text-black">Alajuela</option>
-                <option class="text-black">Cartago</option>
-                <option class="text-black">Heredia</option>
-                <option class="text-black">Guanacaste</option>
-                <option class="text-black">Puntarenas</option>
-                <option class="text-black">Limón</option>
-              </select>
-            </div>
-
-            <!-- Estado civil -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Estado Civil</label>
-              <select name="estado_civil" class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
-                <option class="text-black">Soltero</option>
-                <option class="text-black">Casado</option>
-                <option class="text-black">Divorciado</option>
-                <option class="text-black">Viudo</option>
-              </select>
-            </div>
-
-            <!-- Nivel generacional -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Nivel generacional</label>
-              <input type="number" name="nivel" required
-                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                     placeholder="Ej: 0, 1, 2..." />
-            </div>
-
-            <!-- Número de sub-familia -->
-            <div class="flex items-center gap-[91px]">
-              <label class="w-[350px] text-[30px] font-medium">Número de sub-familia</label>
-              <input type="number" name="subfamilia" required
-                     class="w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
-                     placeholder="Ej: 0, 1, 2..." />
-            </div>
-
-          </div>
-
-          <!-- Columna derecha: Nota + Afinidades + Botones -->
-          <div class="flex flex-col gap-6 items-start w-[300px]">
-
-            <!-- Nota (original) -->
-            <div class="glassy rounded-lg flex flex-col gap-4 self-start p-6 text-[15px] w-full">
-              <div class="flex items-center gap-2 text-gray-200 text-[30px]">
-                <span class="material-icons text-yellow-400 text-[30px]">warning</span>
-                <span class="font-bold">Nota:</span>
+            <!-- Columna izquierda: Campos -->
+            <div class="flex flex-col flex-1 gap-6">
+              <!-- Nombre -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Nombre</label>
+                <input type="text" name="nombre" required
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                       placeholder="Ingrese el nombre" />
               </div>
-              <p class="text-gray-200 text-justify leading-relaxed">
-                <strong>Nivel generacional:</strong> indica la posición en el árbol familiar 
-                (abuelos, padres, hijos, nietos, etc).  
-                <br><br>
-                <strong>Número de sub-familia:</strong> se usa cuando un miembro de una 
-                generación forma su propia familia aparte. Por ejemplo, el hijo mayor se 
-                casa y crea un nuevo hogar, ese sería sub-familia 1, y así sucesivamente.
-              </p>
-            </div>
-
-            <!-- Afinidades -->
-            <div class="glassy rounded-lg p-4 w-full text-base mt-[0px] mb-[12px]">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="material-icons text-pink-300 text-[20px]">favorite</span>
-                <h3 class="text-[18px] font-semibold">Afinidades</h3>
+              <!-- Apellidos -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Apellidos</label>
+                <input type="text" name="apellidos" required
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                       placeholder="Ingrese los apellidos" />
               </div>
-
-              <!-- grid con inputs más grandes -->
-              <div class="grid grid-cols-2 gap-2">
-                {% set AFINIDADES = [
-                  'música','lectura','viajes','deporte',
-                  'cine','arte','tecnología','fotografía'
-                ] %}
-                {% for it in AFINIDADES %}
-                <label class="flex items-center gap-3 px-3 py-2 rounded bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer">
-                  <input type="checkbox" name="afinidades" value="{{ it }}" class="w-4 h-4 accent-emerald-400">
-                  <span class="select-none text-sm">{{ it|capitalize }}</span>
-                </label>
-                {% endfor %}
+              <!-- Cédula -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Cédula</label>
+                <input type="text" name="cedula"
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                       placeholder="Digite la cédula" />
+              </div>
+              <!-- Fecha nacimiento -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Fecha de nacimiento</label>
+                <input type="date" name="fecha_nacimiento"
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
+              </div>
+              <!-- Fecha defunción -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Fecha de defunción</label>
+                <input type="date" name="fecha_defuncion"
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none" />
+              </div>
+              <!-- Género -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Género</label>
+                <select name="genero" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                  <option class="text-black">Masculino</option>
+                  <option class="text-black">Femenino</option>
+                  <option class="text-black">Otro</option>
+                </select>
+              </div>
+              <!-- Lugar de residencia -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Lugar de residencia</label>
+                <select name="residencia" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                  <option class="text-black">San José</option>
+                  <option class="text-black">Alajuela</option>
+                  <option class="text-black">Cartago</option>
+                  <option class="text-black">Heredia</option>
+                  <option class="text-black">Guanacaste</option>
+                  <option class="text-black">Puntarenas</option>
+                  <option class="text-black">Limón</option>
+                </select>
+              </div>
+              <!-- Estado civil -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Estado Civil</label>
+                <select name="estado_civil" class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white focus:outline-none">
+                  <option class="text-black">Soltero</option>
+                  <option class="text-black">Casado</option>
+                  <option class="text-black">Divorciado</option>
+                  <option class="text-black">Viudo</option>
+                </select>
+              </div>
+              <!-- Nivel generacional -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Nivel generacional</label>
+                <input type="number" name="nivel" required
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                       placeholder="Ej: 0, 1, 2..." />
+              </div>
+              <!-- Número de sub-familia -->
+              <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-[91px]">
+                <label class="w-[200px] md:w-[350px] text-[clamp(18px,2.6vh,30px)] font-medium">Número de sub-familia</label>
+                <input type="number" name="subfamilia" required
+                       class="flex-1 max-w-[500px] p-3 rounded-lg bg-gray-900/40 text-white placeholder-gray-300 focus:outline-none"
+                       placeholder="Ej: 0, 1, 2..." />
               </div>
             </div>
 
-            <!-- Botones alineados al cuadro -->
-            <div class="flex flex-row gap-4 w-full">
-              <button type="submit"
-                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#01C38E] hover:bg-[#037153] transition">
-                <span class="material-icons">check_circle</span> Añadir
-              </button>
-
-              <button type="reset"
-                      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#DE8165] hover:bg-red-700 transition">
-                <span class="material-icons">cancel</span> Cancelar
-              </button>
+            <!-- Columna derecha -->
+            <div class="flex flex-col gap-6 items-start w-full xl:w-[300px]">
+              <!-- Nota -->
+              <div class="glassy rounded-lg flex flex-col gap-4 self-start p-6 text-[15px] w-full">
+                <div class="flex items-center gap-2 text-gray-200 text-[clamp(18px,2.6vh,30px)]">
+                  <span class="material-icons text-yellow-400 text-[clamp(20px,2.8vh,30px)]">warning</span>
+                  <span class="font-bold">Nota:</span>
+                </div>
+                <p class="text-gray-200 text-justify leading-relaxed">
+                  <strong>Nivel generacional:</strong> indica la posición en el árbol familiar
+                  (abuelos, padres, hijos, nietos, etc).  
+                  <br><br>
+                  <strong>Número de sub-familia:</strong> se usa cuando un miembro de una
+                  generación forma su propia familia aparte.
+                </p>
+              </div>
+              <!-- Afinidades -->
+              <div class="glassy rounded-lg p-4 w-full text-base">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="material-icons text-pink-300 text-[20px]">favorite</span>
+                  <h3 class="text-[18px] font-semibold">Afinidades</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  {% set AFINIDADES = ['música','lectura','viajes','deporte','cine','arte','tecnología','fotografía'] %}
+                  {% for it in AFINIDADES %}
+                  <label class="flex items-center gap-3 px-3 py-2 rounded bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer">
+                    <input type="checkbox" name="afinidades" value="{{ it }}" class="w-4 h-4 accent-emerald-400">
+                    <span class="select-none text-sm">{{ it|capitalize }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+              <!-- Botones -->
+              <div class="flex flex-row gap-4 w-full">
+                <button type="submit"
+                        class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#01C38E] hover:bg-[#037153] transition">
+                  <span class="material-icons">check_circle</span> Añadir
+                </button>
+                <button type="reset"
+                        class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white text-lg flex-1 bg-[#DE8165] hover:bg-red-700 transition">
+                  <span class="material-icons">cancel</span> Cancelar
+                </button>
+              </div>
             </div>
-          </div>
+          </form>
 
-
-        </form>
-
-      </div>
-    </div>
-  </div>
-</div>
-
-
-        
+        </div>
       </div>
     </main>
   </div>
