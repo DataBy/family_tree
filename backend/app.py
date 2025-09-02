@@ -10,10 +10,12 @@ import random
 from services.gestor import GestorEventos
 from services.efecto import edad_actual
 
+
+# Key para mensajes en Flash
 app = Flask(__name__)
-app.secret_key = "supersecreto"  # Necesario para flash
+app.secret_key = "supersecreto"  
 
-
+# Arranca el gestor de eventos (Simulador)
 gestor: GestorEventos | None = None
 app.config["LAST_GESTOR_EVENTS"] = []
 app._gestor_started = False  # evita doble arranque con el reloader
@@ -26,7 +28,6 @@ def _start_gestor_if_needed():
         return
 
     def on_cambios(eventos):
-        # Aquí no hay UI: logueamos y, si querés, el front puede hacer polling a /api/tree-elements
         app.logger.info("Tick gestor: %s eventos", len(eventos))
         app.config["LAST_GESTOR_EVENTS"] = eventos
 
@@ -37,12 +38,12 @@ def _start_gestor_if_needed():
         rng_seed=42,
         on_change=on_cambios,
         max_uniones_por_familia_por_tick=1,
-        prob_nacimiento_por_pareja_por_tick=0.005,
+        prob_nacimiento_por_pareja_por_tick=0.005, 
     )
     gestor.start()
     app._gestor_started = True
 
-# Flask 3.x: usar before_serving. Si no existe (versiones viejas), caemos a before_request una sola vez.
+# Flask 3 Calcula si hay versiones antiguas y si no, de una sirve la app!
 if hasattr(app, "before_serving"):
     @app.before_serving
     def _on_serving():
@@ -925,7 +926,7 @@ def love():
 
         return jsonify({"ok": False, "message": "Modo no soportado"}), 400
 
-    # ---------- POST clásico (form) ----------
+    # ---------- POST clásico (form de pre buscar la unión) ----------
     a = (request.form.get("a") or "").strip()
     b = (request.form.get("b") or "").strip()
     fam, matriz = get_active()
@@ -958,7 +959,10 @@ def love():
     return redirect(url_for("love"))
 
 
-# Colaterales
+# ============================
+#        Colaterales
+# ============================
+
 @app.route("/colaterales/procesar", methods=["POST"])
 def procesar_colaterales_endpoint():
     fam = session.get("familia_activa")
@@ -990,13 +994,13 @@ def api_time():
     """
     now = datetime.now()
 
-    # Guardamos el último tick en sesión como ISO string para evitar tz issues
+    # Guardamos el último tick en sesión como ISO string para evitar 
     start_iso = session.get("last_tick_iso")
     if start_iso:
         try:
             start = datetime.fromisoformat(start_iso)
         except Exception:
-            # Si hubiese basura en sesión, reseteamos elegante
+            # Si hubiese basura en sesión, reseteamos 
             start = now
             session["last_tick_iso"] = now.isoformat()
     else:

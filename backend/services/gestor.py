@@ -117,10 +117,11 @@ class GestorEventos:
       - Nacimientos en parejas: bebé va a fila (fila_pareja+1) y misma columna de la pareja; cédula autogenerada.
     """
 
+    # Variables iniciadoras (cambian al ser llamadas)
     def __init__(
         self,
-        tick_seg: int = 10,
-        anios_por_tick: int = 1,
+        tick_seg: int = 10, # Segundos para el año
+        anios_por_tick: int = 1, 
         rng_seed: Optional[int] = None,
         on_change: Optional[Callable[[List[Cambio]], None]] = None,
         max_uniones_por_familia_por_tick: int = 1,
@@ -347,7 +348,7 @@ class GestorEventos:
             if not parejas:
                 continue
 
-            # Si querés solo una pareja random por familia, descomenta esta línea:
+            # Jarvis, si quiere solo una pareja random por familia, descomenta esta línea:
             # parejas = [self.rng.choice(parejas)]
 
             for pareja in parejas:

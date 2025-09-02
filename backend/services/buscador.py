@@ -81,7 +81,7 @@ def esposos_de(nombre: str) -> set[str]:
                 k = _in_celda(celda, nombre)
                 if k != -1:
                     for idx, p in enumerate(celda):
-                        if idx != k:
+                        if idx != k: # Para que ignore a si mismo y no se ponga cómo hermano de si mismo
                             esposos.add(_full(p))
     return esposos
 
@@ -123,8 +123,10 @@ def abuelos_de(h: str) -> set[str]:
                     ab.add(_full(p))
     return ab
 
+
+
 # =============================
-# Helpers Preguntas antepasados, etc...
+# Helpers Preguntas Chatbot
 # =============================
 def _children_of(nombre: str) -> set[str]:
     """
@@ -175,7 +177,7 @@ def primos_primer_grado(nombre: str) -> list[str]:
         for tio in hermanos_de(padre):
             primos.update(_children_of(tio))
 
-    # quitarme a mí mismo (por duplicidad de nombres)
+    # quitarme a mí mismo 
     primos = [n for n in primos if _norm(n) != _norm(nombre)]
     return sorted(primos)
 
@@ -293,7 +295,7 @@ def primos_primer_grado(nombre: str) -> list[str]:
                     primos.add(h)
                     t_vistos.add(_norm(h))
 
-    # Orden alfabético “bonito”
+    # Orden alfabético 
     return sorted(primos, key=lambda s: s.split()[-1] + " " + s.split()[0])
 
 
@@ -336,7 +338,7 @@ def antepasados_maternos(nombre: str) -> list[str]:
 
 
 # =============================
-# 4) Descendientes vivos (recursivo/BFS)
+# 4) Descendientes vivos 
 # =============================
 def descendientes_vivos(nombre: str) -> list[str]:
     """
@@ -380,7 +382,7 @@ def descendientes_vivos(nombre: str) -> list[str]:
 
 
 # -----------------------------
-# Reglas de relación
+# Reglas de relación (Algoritmo de búsqueda)
 # -----------------------------
 def relacion(a: str, b: str) -> str:
     pos_a = posiciones(a)
